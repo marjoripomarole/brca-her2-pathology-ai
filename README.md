@@ -18,6 +18,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `scripts/render_virtual_mif_channel_images.py`: renders all-channel virtual mIF figures from GigaTIME tile and slide predictions.
 - `scripts/render_virtual_mif_composites.py`: reruns GigaTIME on selected tiles and renders fluorescence-style virtual mIF composites from the full predicted channel maps.
 - `scripts/render_clinical_her2_visual_qc.py`: renders clinical HER2 visual QC panels for cases driving high virtual `CD68`/`PD-L1`/`CD11c` signal.
+- `scripts/build_clinical_her2_findings_report.py`: builds a simple display notebook and HTML report for the current clinical HER2 findings.
 - `docs/virtual_mif_channel_outputs.md`: explains the generated virtual mIF channel images and how to interpret them.
 - `docs/plain_language_methodology.md`: detailed non-specialist explanation of the study background, methodology, outputs, and current limitations.
 - `docs/paper_proposal_process_log.md`: living process log for turning the pilot into a paper or grant proposal.
@@ -28,6 +29,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `docs/advisor_brief.md`: concise project framing and discussion points.
 - `docs/current_pilot_run.md`: current two-case run status and advisor-facing caveats.
 - `configs/tcga_brca_her2.yaml`: default paths and pilot settings.
+- `notebooks/clinical_her2_findings_simple.ipynb` and `notebooks/clinical_her2_findings_simple.html`: simple presentation-ready summary of the findings so far.
 
 ## Requirements
 
@@ -228,6 +230,17 @@ conda run -n gigatime-tcga python scripts/render_clinical_her2_visual_qc.py
 ```
 
 This writes tracked QC panels and selected-case tables to `docs/assets/clinical_her2_visual_qc/`.
+
+To rebuild the simple presentation notebook and HTML report:
+
+```bash
+conda run -n gigatime-tcga python scripts/build_clinical_her2_findings_report.py
+```
+
+This writes:
+
+- `notebooks/clinical_her2_findings_simple.ipynb`
+- `notebooks/clinical_her2_findings_simple.html`
 
 ## Notes for the Advisor Discussion
 

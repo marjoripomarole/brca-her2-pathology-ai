@@ -385,6 +385,32 @@ Visual QC result:
 - The selected HER2-positive case also had visually plausible high-signal tiles, so the pattern is not unique to HER2-zero at the tile level.
 - This supports continued investigation but does not validate the virtual marker biology.
 
+### 15. Built a Simple Display Notebook and HTML Report
+
+To make the current findings easier to present, a simple display notebook and HTML report were generated from the current clinical HER2 result tables and tracked figure assets.
+
+Command:
+
+```bash
+conda run -n gigatime-tcga python scripts/build_clinical_her2_findings_report.py
+```
+
+Tracked outputs:
+
+- `notebooks/clinical_her2_findings_simple.ipynb`
+- `notebooks/clinical_her2_findings_simple.html`
+- `docs/assets/clinical_her2_findings/clinical_her2_channel_boxplots.png`
+- `docs/assets/clinical_her2_findings/clinical_her2_group_mean_heatmap.png`
+- `docs/assets/clinical_her2_findings/erbb2_tpm_by_clinical_her2_group.png`
+
+The report is intentionally simple. It emphasizes:
+
+- The balanced 10/10/10 clinical HER2 design.
+- The leading HER2-zero versus HER2-low virtual immune/checkpoint signal.
+- The weak RNA validation result.
+- The visual QC result.
+- The correct cautious proposal language.
+
 See `docs/clinical_her2_gigatime_run.md` for the exact commands, local output paths, and current pilot table.
 
 ## Initial Biological Findings From the ERBB2-Extreme Pilot
@@ -597,6 +623,7 @@ Current workflow scripts:
 - `scripts/summarize_clinical_her2_gigatime.py`
 - `scripts/validate_gigatime_with_rna_signatures.py`
 - `scripts/render_clinical_her2_visual_qc.py`
+- `scripts/build_clinical_her2_findings_report.py`
 - `scripts/render_he_slide_images.py`
 - `scripts/render_virtual_mif_channel_images.py`
 - `scripts/render_virtual_mif_composites.py`
@@ -613,6 +640,8 @@ Current documentation:
 - `docs/clinical_her2_gigatime_run.md`
 - `docs/clinical_her2_rna_validation.md`
 - `docs/clinical_her2_visual_qc.md`
+- `notebooks/clinical_her2_findings_simple.ipynb`
+- `notebooks/clinical_her2_findings_simple.html`
 
 Current key result files:
 
@@ -633,12 +662,12 @@ Current key result files:
 - `results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_summary.md`
 - `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_signature_correlations.csv`
 - `docs/assets/clinical_her2_visual_qc/clinical_her2_visual_qc_selected_cases.csv`
+- `docs/assets/clinical_her2_findings/clinical_her2_group_mean_heatmap.png`
 
 ## Next Immediate Step
 
 The next step is not another download. The 30-slide clinical HER2 pilot is complete. The next scientific step is validation and robustness checking:
 
-- Rerun the 30 selected slides with more tiles per slide.
 - Test whether HER2-zero remains higher than HER2-low for CD68, PD-L1, and CD11c.
 - Rerun the 30 selected slides with more tiles per slide, such as 256 or 512.
 - Re-run the clinical HER2 summary, RNA validation, and visual QC after denser tile sampling.
