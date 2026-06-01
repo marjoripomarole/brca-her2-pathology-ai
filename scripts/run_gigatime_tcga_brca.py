@@ -46,6 +46,14 @@ IMAGENET_STD = np.array([0.229, 0.224, 0.225], dtype=np.float32)
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--slides-dir", default="data/tcga_brca/slides", help="Directory containing TCGA .svs files.")
+    parser.add_argument("--slide-table", default=None, help="Optional CSV listing slides to process.")
+    parser.add_argument("--slide-path-column", default="slide_local_path", help="Column in --slide-table containing slide paths.")
+    parser.add_argument(
+        "--missing-slide-policy",
+        default="error",
+        choices=["error", "skip"],
+        help="What to do when --slide-table includes paths not present locally.",
+    )
     parser.add_argument("--out-dir", default="results/gigatime_tcga_brca", help="Output directory.")
     parser.add_argument("--gigatime-repo", default="external/GigaTIME", help="Path to the official GigaTIME repo clone.")
     parser.add_argument("--tile-size", type=int, default=256, help="Tile size passed to GigaTIME.")
@@ -106,6 +114,36 @@ def load_model(torch, gigatime_class, snapshot_download, device):
 def find_slides(slides_dir: Path) -> list[Path]:
     suffixes = {".svs", ".tif", ".tiff"}
     return sorted(path for path in slides_dir.rglob("*") if path.suffix.lower() in suffixes)
+
+
+def find_slides_from_table(path: Path, slide_path_column: str, missing_policy: str) -> list[Path]:
+    slides: list[Path] = []
+    missing: list[Path] = []
+    with path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        if not reader.fieldnames:
+            raise ValueError(f"No columns found in slide table: {path}")
+        if slide_path_column not in reader.fieldnames:
+            raise ValueError(
+                f"Slide table {path} does not contain column {slide_path_column!r}. "
+                f"Available columns: {', '.join(reader.fieldnames)}"
+            )
+        for row in reader:
+            raw_value = (row.get(slide_path_column) or "").strip()
+            if not raw_value:
+                continue
+            slide_path = Path(raw_value)
+            if slide_path.exists():
+                slides.append(slide_path)
+            else:
+                missing.append(slide_path)
+    if missing:
+        message = f"{len(missing)} slide paths from {path} are missing locally."
+        if missing_policy == "error":
+            example = "\n".join(f"- {slide}" for slide in missing[:10])
+            raise FileNotFoundError(f"{message}\n{example}")
+        print(f"{message} Skipping missing slides.", file=sys.stderr)
+    return list(dict.fromkeys(slides))
 
 
 def case_from_slide_path(path: Path) -> str:
@@ -279,7 +317,10 @@ def main() -> int:
     print(f"Using device: {device}", file=sys.stderr)
     model = load_model(torch, gigatime_class, snapshot_download, device)
 
-    slides = find_slides(Path(args.slides_dir))
+    if args.slide_table:
+        slides = find_slides_from_table(Path(args.slide_table), args.slide_path_column, args.missing_slide_policy)
+    else:
+        slides = find_slides(Path(args.slides_dir))
     if args.max_slides:
         slides = slides[: args.max_slides]
     if not slides:

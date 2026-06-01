@@ -12,12 +12,14 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `scripts/select_clinical_her2_cohort.py`: selects a balanced clinical HER2-positive/HER2-low/HER2-zero cohort and writes a slide manifest for the next GigaTIME run.
 - `scripts/run_gigatime_tcga_brca.py`: tiles TCGA-BRCA `.svs` slides, runs the official GigaTIME model, and aggregates virtual mIF channels per slide.
 - `scripts/summarize_her2_gigatime.py`: joins GigaTIME slide scores with ERBB2 expression and makes HER2-high/HER2-low summary figures.
+- `scripts/summarize_clinical_her2_gigatime.py`: compares GigaTIME virtual mIF outputs across clinical HER2-positive/HER2-low/HER2-zero groups.
 - `scripts/render_virtual_mif_channel_images.py`: renders all-channel virtual mIF figures from GigaTIME tile and slide predictions.
 - `scripts/render_virtual_mif_composites.py`: reruns GigaTIME on selected tiles and renders fluorescence-style virtual mIF composites from the full predicted channel maps.
 - `docs/virtual_mif_channel_outputs.md`: explains the generated virtual mIF channel images and how to interpret them.
 - `docs/plain_language_methodology.md`: detailed non-specialist explanation of the study background, methodology, outputs, and current limitations.
 - `docs/paper_proposal_process_log.md`: living process log for turning the pilot into a paper or grant proposal.
 - `docs/clinical_her2_cohort_selection.md`: selected 30-case clinical HER2 pilot cohort and selection counts.
+- `docs/clinical_her2_gigatime_run.md`: selected-cohort GigaTIME run status and preliminary clinical HER2 summary.
 - `docs/advisor_brief.md`: concise project framing and discussion points.
 - `docs/current_pilot_run.md`: current two-case run status and advisor-facing caveats.
 - `configs/tcga_brca_her2.yaml`: default paths and pilot settings.
@@ -145,7 +147,21 @@ Key output:
 
 For the first advisor meeting, `--tile-limit 512` is enough to demonstrate the pipeline. Increase or remove it for the full run.
 
-## 5. Summarize by HER2/ERBB2 Expression
+To run GigaTIME only on the selected clinical HER2 cohort and skip slides that have not been downloaded yet:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_gigatime_tcga_brca.py \
+  --slide-table data/tcga_brca/clinical_her2_cohort_slides_files.csv \
+  --missing-slide-policy skip \
+  --out-dir results/gigatime_tcga_brca_clinical_her2 \
+  --tile-limit 64 \
+  --tile-order random \
+  --batch-size 16 \
+  --device auto \
+  --save-tile-csv
+```
+
+## 5. Summarize Results
 
 ```bash
 python scripts/summarize_her2_gigatime.py \
@@ -155,6 +171,15 @@ python scripts/summarize_her2_gigatime.py \
 ```
 
 This writes joined data, channel-level HER2-high versus HER2-low summaries, figures, and `advisor_summary.md`.
+
+For the clinical HER2-positive/HER2-low/HER2-zero cohort:
+
+```bash
+conda run -n gigatime-tcga python scripts/summarize_clinical_her2_gigatime.py \
+  --slide-scores results/gigatime_tcga_brca_clinical_her2/slide_scores.csv \
+  --cohort data/tcga_brca/clinical_her2_cohort_cases.csv \
+  --out-dir results/gigatime_tcga_brca_clinical_her2/clinical_summary
+```
 
 ## 6. Render All Virtual mIF Channel Images
 
