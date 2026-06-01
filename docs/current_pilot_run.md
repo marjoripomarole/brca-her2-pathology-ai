@@ -27,6 +27,8 @@ The HER2 group labels come from `data/tcga_brca/clinical_her2_labels.csv`, which
 - `results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_channel_summary.csv`
 - `results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_pairwise_tests.csv`
 - `results/gigatime_tcga_brca_clinical_her2/clinical_summary/*.png`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_signature_correlations.csv`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/rna_validation_summary.md`
 
 The earlier ERBB2-high versus ERBB2-low pilot outputs are still present under `results/gigatime_tcga_brca_extremes/`, and the documentation-facing virtual mIF images are still under:
 
@@ -46,6 +48,18 @@ The strongest three-group virtual-channel differences were:
 | CD11c | 0.0494 | HER2-zero | HER2-low |
 
 Pairwise HER2-low versus HER2-zero comparisons were strongest for CD68, CD11c, PD-L1, CD4, and Ki67, but none remained significant after Benjamini-Hochberg correction.
+
+## RNA Validation Check
+
+The first indirect validation layer compared GigaTIME virtual channels with matched RNA-seq marker signatures from the same 30 cases.
+
+Result:
+
+- No channel had an FDR-significant GigaTIME-versus-RNA signature correlation.
+- `Ki67` had the strongest positive trend, Spearman rho 0.294.
+- `CD68`, `PD-L1`, and `CD11c` did not show strong positive correlations with their matching RNA signatures.
+
+Interpretation: the clinical HER2 virtual immune signal is interesting, but not yet validated. It needs visual QC, more tiles per slide, and stronger orthogonal validation before making biological claims.
 
 ## Commands
 

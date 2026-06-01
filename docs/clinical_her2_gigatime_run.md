@@ -120,8 +120,11 @@ This is useful because it gives the project a specific next hypothesis:
 
 ## Next Step
 
-The next analysis step is to test whether this HER2-zero versus HER2-low immune signal is robust:
+The next analysis step is to test whether this HER2-zero versus HER2-low immune signal is robust. The first RNA-seq validation layer has now been run and did not strongly validate the virtual immune-channel pattern, so visual QC and denser tile sampling are especially important.
 
 1. Increase tile sampling per slide.
 2. Expand beyond the 30 selected cases if more clinical HER2-zero cases can be reliably included.
-3. Compare GigaTIME predictions with orthogonal immune evidence, such as RNA-derived immune marker expression or published TCGA immune subtype annotations.
+3. Review the source H&E tiles and virtual mIF composites for cases driving high `CD68`, `PD-L1`, and `CD11c`.
+4. Compare GigaTIME predictions with richer orthogonal immune evidence, such as RNA-derived immune signatures, tumor purity estimates, or published TCGA immune subtype annotations.
+
+See `docs/clinical_her2_rna_validation.md` for the first RNA-seq marker-signature comparison.

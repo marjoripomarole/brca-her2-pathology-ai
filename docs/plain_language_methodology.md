@@ -416,9 +416,10 @@ The current pilot has not yet:
 - Used more exhaustive whole-slide sampling.
 - Performed formal tissue quality control on every sampled tile.
 - Validated GigaTIME predictions against real multiplex immunofluorescence staining in these TCGA slides.
-- Compared GigaTIME immune channels with RNA-seq immune signatures.
 - Trained or fine-tuned a new model.
 - Produced a clinically deployable classifier.
+
+The project has now performed a first indirect RNA-seq validation check using simple marker-gene signatures. That check did not strongly confirm the current virtual immune-channel pattern, so it should be treated as an early caution rather than a completed validation.
 
 These limitations are important. The current goal is proof of workflow and early biological exploration, not a final scientific claim.
 
@@ -444,12 +445,14 @@ This is an exploratory feasibility run showing that an existing H&E-to-virtual-m
 
 The current 30-slide result is too small for strong biological conclusions. It is useful because it identifies a specific hypothesis: HER2-zero tumors may show higher GigaTIME-predicted immune/checkpoint signal than HER2-low tumors in this selected TCGA-BRCA pilot.
 
+The first RNA-seq validation check did not strongly support that signal. GigaTIME `CD68`, `PD-L1`, and `CD11c` predictions did not show strong positive correlations with matched RNA marker signatures. This does not automatically invalidate the model, but it means the project should be careful and should not claim that the virtual mIF signal has been validated.
+
 The next scientific step is to test whether this pattern remains when:
 
 - More tiles per slide are sampled.
 - More cases are included if reliable HER2-zero cases are available.
-- The virtual immune channels are compared with RNA-seq immune marker expression or immune signatures.
 - A human reviews representative H&E tiles and virtual mIF composites for plausibility.
+- Richer validation layers are added, such as tumor purity adjustment, published immune subtype annotations, or an external dataset with real mIF.
 
 ## 13. Reproducible Workflow Summary
 

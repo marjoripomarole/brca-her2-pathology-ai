@@ -14,6 +14,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `scripts/run_gigatime_tcga_brca.py`: tiles TCGA-BRCA `.svs` slides, runs the official GigaTIME model, and aggregates virtual mIF channels per slide.
 - `scripts/summarize_her2_gigatime.py`: joins GigaTIME slide scores with ERBB2 expression and makes HER2-high/HER2-low summary figures.
 - `scripts/summarize_clinical_her2_gigatime.py`: compares GigaTIME virtual mIF outputs across clinical HER2-positive/HER2-low/HER2-zero groups.
+- `scripts/validate_gigatime_with_rna_signatures.py`: compares GigaTIME virtual channels with matched RNA-seq marker signatures as an indirect validation check.
 - `scripts/render_virtual_mif_channel_images.py`: renders all-channel virtual mIF figures from GigaTIME tile and slide predictions.
 - `scripts/render_virtual_mif_composites.py`: reruns GigaTIME on selected tiles and renders fluorescence-style virtual mIF composites from the full predicted channel maps.
 - `docs/virtual_mif_channel_outputs.md`: explains the generated virtual mIF channel images and how to interpret them.
@@ -21,6 +22,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `docs/paper_proposal_process_log.md`: living process log for turning the pilot into a paper or grant proposal.
 - `docs/clinical_her2_cohort_selection.md`: selected 30-case clinical HER2 pilot cohort and selection counts.
 - `docs/clinical_her2_gigatime_run.md`: selected-cohort GigaTIME run status and full 30-slide clinical HER2 summary.
+- `docs/clinical_her2_rna_validation.md`: first RNA-seq validation check for the clinical HER2 GigaTIME pilot.
 - `docs/advisor_brief.md`: concise project framing and discussion points.
 - `docs/current_pilot_run.md`: current two-case run status and advisor-facing caveats.
 - `configs/tcga_brca_her2.yaml`: default paths and pilot settings.
@@ -193,6 +195,14 @@ conda run -n gigatime-tcga python scripts/summarize_clinical_her2_gigatime.py \
   --out-dir results/gigatime_tcga_brca_clinical_her2/clinical_summary
 ```
 
+To run the first indirect RNA-seq validation layer:
+
+```bash
+conda run -n gigatime-tcga python scripts/validate_gigatime_with_rna_signatures.py
+```
+
+This compares GigaTIME channels such as `CD68`, `PD-L1`, `CD11c`, and `Ki67` with simple matched RNA marker signatures from the available STAR-count files.
+
 ## 6. Render All Virtual mIF Channel Images
 
 ```bash
@@ -213,6 +223,7 @@ This writes H&E-versus-virtual-mIF panels and marker-composite montages to `docs
 
 - HER2 is represented here by `ERBB2` RNA expression from TCGA-BRCA STAR-count files.
 - GigaTIME outputs virtual mIF maps for 23 channels, including immune markers such as `CD3`, `CD8`, `CD4`, `CD20`, `CD68`, `PD-1`, and `PD-L1`.
-- The first deliverable is a replication/adaptation pilot, not a new model: run the released model on TCGA-BRCA H&E slides and ask whether virtual TIME signatures differ across ERBB2 expression strata.
+- The first deliverable is a replication/adaptation pilot, not a new model: run the released model on TCGA-BRCA H&E slides and ask whether virtual TIME signatures differ across clinical HER2 groups.
 - The initial run should be treated as exploratory until tissue QC, slide-level aggregation, and HER2 clinical annotations are reviewed.
 - The current clinical HER2 pilot has processed 30 selected slides: 10 HER2-positive, 10 HER2-low, and 10 HER2-zero. The strongest pilot signal is higher GigaTIME-predicted CD68, PD-L1, and CD11c in HER2-zero versus HER2-low, but these are hypothesis-generating and not FDR-significant after pairwise correction.
+- The first RNA-seq validation check did not strongly confirm the virtual immune-channel signal; correlations between matched RNA marker signatures and GigaTIME channels were weak and not FDR-significant.

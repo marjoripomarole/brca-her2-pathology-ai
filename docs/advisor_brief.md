@@ -27,6 +27,16 @@ The strongest pilot signal was not HER2-positive versus HER2-low. Instead, HER2-
 
 The top unadjusted three-group tests were CD68, PD-L1, and CD11c. Pairwise HER2-low versus HER2-zero tests were the strongest, but none remained significant after Benjamini-Hochberg correction. This should be framed as a hypothesis-generating signal.
 
+## First Validation Check
+
+We compared the GigaTIME virtual channels with matched TCGA RNA-seq marker signatures for the same 30 cases.
+
+This did not strongly confirm the virtual immune-channel signal:
+
+- `Ki67` had the strongest positive correlation with its RNA signature, but it was weak and not FDR-significant.
+- `CD68`, `PD-L1`, and `CD11c`, the main virtual channels driving the HER2-zero versus HER2-low signal, did not show strong positive RNA-signature correlations.
+- This means the current result should remain hypothesis-generating until visual QC, more tile sampling, and additional validation are done.
+
 ## Why This Is a Good First Step
 
 - It is replication-first: the model is not retrained, only applied to public TCGA-BRCA data.
@@ -39,6 +49,7 @@ The top unadjusted three-group tests were CD68, PD-L1, and CD11c. Pairwise HER2-
 - Clinical HER2 labels are derived from TCGA clinical supplement IHC/ISH fields, which are incomplete and must be described carefully.
 - The first balanced clinical HER2 run is still small: 10 cases per group.
 - The 64-tile-per-slide run is a practical pilot, not a final whole-slide sampling strategy.
+- Bulk RNA-seq is an indirect validation layer and did not strongly validate the current GigaTIME immune-channel pattern.
 - TCGA slide quality, tissue sampling, and tumor purity need QC before strong biological claims.
 - GigaTIME is research-only and not a clinical HER2 classifier.
 - The virtual mIF channel images are GigaTIME predictions from H&E tiles, not real multiplex immunofluorescence measurements from TCGA.

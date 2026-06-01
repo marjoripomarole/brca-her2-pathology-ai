@@ -311,6 +311,43 @@ Current full-pilot result:
 - Pairwise HER2-low versus HER2-zero tests were strongest for CD68, CD11c, PD-L1, CD4, and Ki67.
 - No pairwise comparison remained significant after Benjamini-Hochberg correction, so the result is hypothesis-generating rather than definitive.
 
+### 13. Compared GigaTIME Virtual Channels With RNA-Seq Marker Signatures
+
+Because matched real mIF is not currently available for the TCGA slides in this project, the first indirect validation layer compared GigaTIME virtual-channel scores with matched bulk RNA-seq marker signatures.
+
+Command:
+
+```bash
+conda run -n gigatime-tcga python scripts/validate_gigatime_with_rna_signatures.py
+```
+
+Main local outputs:
+
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/case_rna_signatures.csv`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/joined_gigatime_rna_signatures.csv`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_signature_correlations.csv`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_group_summary.csv`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/rna_validation_summary.md`
+
+Tracked documentation:
+
+- `docs/clinical_her2_rna_validation.md`
+- `docs/assets/clinical_her2_rna_validation/gigatime_rna_correlation_heatmap.png`
+- `docs/assets/clinical_her2_rna_validation/top_gigatime_rna_signature_scatter.png`
+
+RNA validation result:
+
+- All 30 clinical HER2 pilot cases had matched RNA-seq files available locally.
+- No GigaTIME channel had an FDR-significant correlation with its RNA marker signature.
+- `Ki67` had the strongest positive trend, Spearman rho 0.294, but this was not significant after correction.
+- The main virtual immune-signal channels, CD68, PD-L1, and CD11c, did not show strong positive RNA-signature correlations.
+
+Interpretation:
+
+- The HER2-zero versus HER2-low GigaTIME immune/checkpoint signal is not yet validated by bulk RNA-seq.
+- This does not prove the virtual signal is wrong, because bulk RNA-seq and H&E tile-level virtual mIF measure different tissue layers.
+- The result raises the bar for the next step: visual QC, more tile sampling per slide, and stronger orthogonal validation are needed before making biological claims.
+
 See `docs/clinical_her2_gigatime_run.md` for the exact commands, local output paths, and current pilot table.
 
 ## Initial Biological Findings From the ERBB2-Extreme Pilot
@@ -457,6 +494,8 @@ Examples:
 
 This does not prove the virtual mIF is correct, but it helps determine whether predicted tissue signals are directionally consistent with molecular data.
 
+The first implementation of this RNA validation layer is complete for simple marker signatures. It did not strongly validate the current virtual immune-channel pattern, so future validation should consider richer immune signatures, tumor purity adjustment, more tile sampling, and visual review.
+
 ### Analysis 5: Visual QC and Trustworthiness Review
 
 For selected cases from each HER2 group:
@@ -519,6 +558,7 @@ Current workflow scripts:
 - `scripts/run_gigatime_tcga_brca.py`
 - `scripts/summarize_her2_gigatime.py`
 - `scripts/summarize_clinical_her2_gigatime.py`
+- `scripts/validate_gigatime_with_rna_signatures.py`
 - `scripts/render_he_slide_images.py`
 - `scripts/render_virtual_mif_channel_images.py`
 - `scripts/render_virtual_mif_composites.py`
@@ -533,6 +573,7 @@ Current documentation:
 - `docs/paper_proposal_process_log.md`
 - `docs/clinical_her2_cohort_selection.md`
 - `docs/clinical_her2_gigatime_run.md`
+- `docs/clinical_her2_rna_validation.md`
 
 Current key result files:
 
@@ -551,6 +592,7 @@ Current key result files:
 - `results/gigatime_tcga_brca_extremes/advisor_summary/her2_group_channel_summary.csv`
 - `results/gigatime_tcga_brca_clinical_her2/slide_scores.csv`
 - `results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_summary.md`
+- `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_signature_correlations.csv`
 
 ## Next Immediate Step
 
@@ -558,5 +600,5 @@ The next step is not another download. The 30-slide clinical HER2 pilot is compl
 
 - Rerun the 30 selected slides with more tiles per slide.
 - Test whether HER2-zero remains higher than HER2-low for CD68, PD-L1, and CD11c.
-- Compare the GigaTIME virtual immune channels with RNA-seq immune markers or immune signatures.
 - Create a small visual QC set showing source H&E tiles beside virtual mIF outputs for representative HER2-positive, HER2-low, and HER2-zero cases.
+- Prioritize visual QC for cases driving high virtual CD68, PD-L1, and CD11c predictions because the first RNA validation check did not strongly confirm those signals.
