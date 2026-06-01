@@ -70,7 +70,7 @@ So the workflow cuts each slide into many small image patches called tiles. The 
 
 Not every tile is useful. Some areas are blank background or have little tissue. The script estimates the tissue fraction of each tile and keeps tiles that pass a minimum tissue threshold.
 
-For the current clinical HER2 pilot, the workflow processed 64 random tissue tiles per slide.
+For the first clinical HER2 pilot, the workflow processed 64 random tissue tiles per slide. The same 30 slides were then rerun with up to 256 random tissue tiles per slide to check whether the result was stable when more of each slide was sampled.
 
 ## 4. What is GigaTIME?
 
@@ -253,7 +253,8 @@ Current clinical HER2 run:
 - Slides processed: 30.
 - Cases processed: 30.
 - Groups processed: 10 HER2-positive, 10 HER2-low, 10 HER2-zero.
-- Tiles per slide: 64 random tissue tiles.
+- Initial tiles per slide: 64 random tissue tiles.
+- Robustness tiles per slide: up to 256 random tissue tiles in a second run.
 - Total tile predictions: about 1,920.
 - Device used: Apple MPS in the current local run.
 
@@ -326,6 +327,22 @@ No pairwise comparison remained statistically significant after multiple-testing
 Plain-language interpretation:
 
 > In this first 30-slide pilot, GigaTIME predicted more immune/checkpoint-like signal in HER2-zero tumors than in HER2-low tumors, especially for CD68, PD-L1, and CD11c. The sample is small, so this should be treated as a hypothesis for validation.
+
+### 256-tile robustness check
+
+The same 30 slides were rerun with more tile sampling. This was done because a whole-slide image is large, and 64 tiles might not represent the whole tissue section.
+
+The denser run gave the same main result:
+
+| Channel | 64-tile p | 256-tile p | 64 max-min | 256 max-min | Direction |
+|---|---:|---:|---:|---:|---|
+| CD68 | 0.0242 | 0.0167 | 0.00913 | 0.01044 | HER2-zero > HER2-low |
+| PD-L1 | 0.0423 | 0.0211 | 0.01749 | 0.02061 | HER2-zero > HER2-low |
+| CD11c | 0.0494 | 0.0384 | 0.00450 | 0.00504 | HER2-zero > HER2-low |
+
+In plain language: when the model looked at more pieces of each slide, the same HER2-zero versus HER2-low signal was still there. That makes the finding more trustworthy than before, but it still does not prove the biology is real.
+
+The most important caution is that matched RNA-seq validation was still weak after the 256-tile run. So the result is more robust to tile sampling, but still not validated by an independent biological measurement.
 
 ## 8. What the Output Tables Mean
 
@@ -419,7 +436,7 @@ The current pilot has not yet:
 - Trained or fine-tuned a new model.
 - Produced a clinically deployable classifier.
 
-The project has now performed a first indirect RNA-seq validation check using simple marker-gene signatures. That check did not strongly confirm the current virtual immune-channel pattern, so it should be treated as an early caution rather than a completed validation.
+The project has now performed a first indirect RNA-seq validation check using simple marker-gene signatures, including after the 256-tile rerun. That check did not strongly confirm the current virtual immune-channel pattern, so it should be treated as an early caution rather than a completed validation.
 
 These limitations are important. The current goal is proof of workflow and early biological exploration, not a final scientific claim.
 
@@ -449,9 +466,9 @@ The first RNA-seq validation check did not strongly support that signal. GigaTIM
 
 The first visual QC check looked at the H&E tiles driving high virtual `CD68`, `PD-L1`, and `CD11c` predictions. Those tiles contained real cellular tissue rather than obvious blank background. That supports continuing the analysis, but it still does not prove that the virtual markers are biologically correct.
 
-The next scientific step is to test whether this pattern remains when:
+The 256-tile rerun suggests the pattern remains when more tissue tiles are sampled. The next scientific step is to test whether the pattern remains and becomes more trustworthy when:
 
-- More tiles per slide are sampled.
+- Even more tiles per slide are sampled or more complete whole-slide coverage is used.
 - More cases are included if reliable HER2-zero cases are available.
 - A human reviews representative H&E tiles and virtual mIF composites for plausibility.
 - Richer validation layers are added, such as tumor purity adjustment, published immune subtype annotations, or an external dataset with real mIF.
@@ -495,7 +512,8 @@ If you are reading the project for the first time, start with:
 1. `README.md` for commands and file locations.
 2. `docs/clinical_her2_cohort_selection.md` for the selected 30-case cohort.
 3. `docs/clinical_her2_gigatime_run.md` for the current full clinical HER2 result.
-4. This document for the conceptual explanation.
-5. `docs/advisor_brief.md` for the short advisor-facing summary.
+4. `docs/clinical_her2_tile_sampling_robustness.md` for the 256-tile robustness check.
+5. This document for the conceptual explanation.
+6. `docs/advisor_brief.md` for the short advisor-facing summary.
 
 The most important caution is that GigaTIME outputs are predicted virtual mIF research features. They are not real multiplex immunofluorescence measurements and should be validated before making biological or clinical claims.

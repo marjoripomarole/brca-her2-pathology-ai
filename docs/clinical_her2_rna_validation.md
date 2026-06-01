@@ -90,6 +90,22 @@ However, this does not automatically mean the GigaTIME outputs are wrong. Bulk R
 - GigaTIME was trained to predict image-local marker patterns, while RNA-seq measures specimen-level transcript abundance.
 - TCGA slide staining, tissue quality, tumor purity, and sampling can vary.
 
+## 256-Tile Robustness RNA Update
+
+After the 64-tile pilot, the same 30 slides were rerun with up to 256 random tissue tiles per slide. The GigaTIME clinical HER2 signal became more stable for `CD68`, `PD-L1`, and `CD11c`, but the RNA validation result remained weak.
+
+The 256-tile RNA validation included all 30 paired cases. Tile sampling had a median of 256 tissue tiles per slide, with a range of 201 to 256.
+
+| Channel | Spearman rho | p | BH q | Interpretation |
+|---|---:|---:|---:|---|
+| Ki67 | 0.252 | 0.179 | 0.5968 | Weak positive relationship with proliferation RNA markers. |
+| PD-L1 | 0.103 | 0.590 | 0.7371 | Very weak positive relationship with `CD274`. |
+| CD68 | -0.036 | 0.851 | 0.9284 | No meaningful positive relationship in this pilot. |
+| CD11c | -0.184 | 0.329 | 0.6038 | Weak negative relationship. |
+| CD20 | -0.337 | 0.0686 | 0.5968 | Moderate negative trend, not significant. |
+
+This means the denser tile sampling strengthened the slide-level HER2-zero versus HER2-low pattern, but it did not make the virtual immune channels align with bulk RNA marker signatures.
+
 ## Proposal Language
 
 A careful way to describe this result:
@@ -98,11 +114,9 @@ A careful way to describe this result:
 
 ## Next Step
 
-The next robustness step should be visual and spatial QC:
+The next step should focus on stronger validation, because sparse 64-tile sampling is probably not the whole explanation for the RNA-discordant result:
 
-- Select representative HER2-zero, HER2-low, and HER2-positive cases.
-- For each, show source H&E tiles beside virtual mIF composites.
-- Prioritize cases driving high `CD68`, `PD-L1`, and `CD11c` predictions.
-- Ask whether high virtual signal appears in plausible tissue regions or in artifacts, folds, necrosis, background, or low-quality tiles.
-
-After that, rerun GigaTIME with more tiles per slide to check whether the RNA-discordant result is partly due to sparse tile sampling.
+- Ask an advisor/pathologist to review whether high virtual signal appears in plausible H&E tissue regions or in artifacts, folds, necrosis, background, or low-quality tiles.
+- Test richer RNA immune signatures instead of only simple marker genes.
+- Add tumor purity or immune deconvolution covariates if available.
+- Look for an external dataset with paired H&E and real mIF for direct validation.

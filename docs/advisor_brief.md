@@ -43,6 +43,22 @@ We rendered H&E-versus-virtual-mIF QC panels for the top `CD68` + `PD-L1` + `CD1
 
 The high-scoring tiles were real tissue-containing, cellular H&E regions rather than obvious blank background. That supports continuing the analysis. However, the high-signal tiles were not visually unique to HER2-zero; the selected HER2-positive case also had strong high-signal tiles. The result remains a slide-level pilot trend, not a clean single-case visual phenotype.
 
+## 256-Tile Robustness Update
+
+We reran the same 30 selected clinical HER2 slides with up to 256 random tissue tiles per slide. This was done to test whether the original 64-tile signal was mainly a sparse-sampling artifact.
+
+The main result persisted:
+
+| Channel | 64-tile p | 256-tile p | 64 max-min | 256 max-min | 256 direction |
+|---|---:|---:|---:|---:|---|
+| CD68 | 0.0242 | 0.0167 | 0.00913 | 0.01044 | HER2-zero > HER2-low |
+| PD-L1 | 0.0423 | 0.0211 | 0.01749 | 0.02061 | HER2-zero > HER2-low |
+| CD11c | 0.0494 | 0.0384 | 0.00450 | 0.00504 | HER2-zero > HER2-low |
+
+Pairwise HER2-low versus HER2-zero q values improved for CD68, PD-L1, and CD11c to 0.1133, but they still did not meet the usual 0.05 FDR threshold.
+
+The 256-tile RNA validation remained weak. No virtual channel had an FDR-significant correlation with its matched RNA marker signature. Therefore, the current interpretation is stronger sampling robustness, not biological validation.
+
 ## Why This Is a Good First Step
 
 - It is replication-first: the model is not retrained, only applied to public TCGA-BRCA data.
@@ -55,6 +71,7 @@ The high-scoring tiles were real tissue-containing, cellular H&E regions rather 
 - Clinical HER2 labels are derived from TCGA clinical supplement IHC/ISH fields, which are incomplete and must be described carefully.
 - The first balanced clinical HER2 run is still small: 10 cases per group.
 - The 64-tile-per-slide run is a practical pilot, not a final whole-slide sampling strategy.
+- The 256-tile rerun supports robustness to denser sampling, but it is still not exhaustive whole-slide analysis.
 - Bulk RNA-seq is an indirect validation layer and did not strongly validate the current GigaTIME immune-channel pattern.
 - Visual QC supports that the signal is not just blank background, but it is not biological validation.
 - TCGA slide quality, tissue sampling, and tumor purity need QC before strong biological claims.

@@ -98,6 +98,29 @@ What this QC pass does not prove:
 - It does not establish a clean HER2-zero versus HER2-low visual phenotype.
 - It does not rule out subtle artifacts, tumor/stroma sampling differences, necrosis, inflammation unrelated to HER2, or slide-level batch effects.
 
+## 256-Tile Visual QC Update
+
+After rerunning the same 30 slides with up to 256 random tissue tiles per slide, the visual QC step was repeated using:
+
+```bash
+conda run -n gigatime-tcga python scripts/render_clinical_her2_visual_qc.py \
+  --joined results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/joined_slide_clinical_her2_gigatime.csv \
+  --tile-scores results/gigatime_tcga_brca_clinical_her2_tile256/tile_scores.csv \
+  --out-dir docs/assets/clinical_her2_visual_qc_tile256
+```
+
+The selected representative cases were the same as in the 64-tile QC pass:
+
+| Clinical HER2 group | Selected case | Combined signal | mean CD68 | mean PD-L1 | mean CD11c |
+|---|---|---:|---:|---:|---:|
+| HER2-positive | TCGA-A2-A0EQ | 0.110 | 0.028 | 0.069 | 0.013 |
+| HER2-low | TCGA-A2-A04Q | 0.080 | 0.017 | 0.054 | 0.009 |
+| HER2-zero | TCGA-A2-A0T2 | 0.140 | 0.041 | 0.077 | 0.022 |
+
+![256-tile HER2-zero visual QC](assets/clinical_her2_visual_qc_tile256/her2_zero_TCGA-A2-A0T2_he_vs_virtual_mif_qc.png)
+
+The HER2-zero representative had the highest combined slide-level `CD68` + `PD-L1` + `CD11c` signal after denser sampling. The top tiles still contain tissue and dense cellular regions rather than obvious blank background. This supports continued review but still does not prove true immune-marker expression.
+
 ## Proposal Language
 
 A careful way to describe this step:
@@ -106,9 +129,9 @@ A careful way to describe this step:
 
 ## Next Step
 
-The next methodological improvement should be denser tile sampling:
+The denser 256-tile sampling step is now complete. The next methodological improvement should be validation:
 
-- Rerun the 30 selected slides with more tiles per slide, such as 256 or 512.
-- Compare whether the HER2-zero versus HER2-low signal persists.
-- Re-run RNA-signature validation after denser sampling.
-- Repeat visual QC on the new top-driving cases and ask an advisor/pathologist to review whether the H&E regions are plausible.
+- Ask an advisor/pathologist to review whether the high-signal H&E regions are plausible.
+- Consider a 512-tile or more exhaustive run if compute time allows.
+- Compare the predictions with richer RNA immune signatures, tumor purity estimates, and immune deconvolution outputs.
+- Look for an external dataset with paired H&E and real mIF for direct validation.

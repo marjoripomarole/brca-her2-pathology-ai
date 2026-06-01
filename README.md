@@ -26,6 +26,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `docs/clinical_her2_gigatime_run.md`: selected-cohort GigaTIME run status and full 30-slide clinical HER2 summary.
 - `docs/clinical_her2_rna_validation.md`: first RNA-seq validation check for the clinical HER2 GigaTIME pilot.
 - `docs/clinical_her2_visual_qc.md`: first visual/spatial QC pass for the clinical HER2 virtual immune-channel signal.
+- `docs/clinical_her2_tile_sampling_robustness.md`: 256-tile robustness check showing whether the 64-tile HER2-zero versus HER2-low signal persists with denser sampling.
 - `docs/advisor_brief.md`: concise project framing and discussion points.
 - `docs/current_pilot_run.md`: current two-case run status and advisor-facing caveats.
 - `configs/tcga_brca_her2.yaml`: default paths and pilot settings.
@@ -179,6 +180,21 @@ conda run -n gigatime-tcga python scripts/run_gigatime_tcga_brca.py \
   --save-tile-csv
 ```
 
+The first robustness rerun used the same selected slides with denser sampling:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_gigatime_tcga_brca.py \
+  --slide-table data/tcga_brca/clinical_her2_cohort_slides_files.csv \
+  --missing-slide-policy skip \
+  --out-dir results/gigatime_tcga_brca_clinical_her2_tile256 \
+  --tile-limit 256 \
+  --tile-order random \
+  --random-seed 42 \
+  --batch-size 16 \
+  --device auto \
+  --save-tile-csv
+```
+
 ## 5. Summarize Results
 
 ```bash
@@ -249,5 +265,6 @@ This writes:
 - The first deliverable is a replication/adaptation pilot, not a new model: run the released model on TCGA-BRCA H&E slides and ask whether virtual TIME signatures differ across clinical HER2 groups.
 - The initial run should be treated as exploratory until tissue QC, slide-level aggregation, and HER2 clinical annotations are reviewed.
 - The current clinical HER2 pilot has processed 30 selected slides: 10 HER2-positive, 10 HER2-low, and 10 HER2-zero. The strongest pilot signal is higher GigaTIME-predicted CD68, PD-L1, and CD11c in HER2-zero versus HER2-low, but these are hypothesis-generating and not FDR-significant after pairwise correction.
+- The 256-tile robustness rerun reproduced the same HER2-zero greater than HER2-low direction for CD68, PD-L1, and CD11c. The leading pairwise q values improved to about 0.113 but remained above 0.05.
 - The first RNA-seq validation check did not strongly confirm the virtual immune-channel signal; correlations between matched RNA marker signatures and GigaTIME channels were weak and not FDR-significant.
 - The first visual QC pass found that high virtual CD68/PD-L1/CD11c tiles were tissue-containing and cellular rather than obvious blank background, but this still does not validate the virtual marker biology.

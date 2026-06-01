@@ -24,7 +24,25 @@ ASSET_COPIES = [
         "results/gigatime_tcga_brca_clinical_her2/clinical_summary/erbb2_tpm_by_clinical_her2_group.png",
         "docs/assets/clinical_her2_findings/erbb2_tpm_by_clinical_her2_group.png",
     ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/clinical_her2_channel_boxplots.png",
+        "docs/assets/clinical_her2_tile256/clinical_her2_channel_boxplots.png",
+    ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/clinical_her2_group_mean_heatmap.png",
+        "docs/assets/clinical_her2_tile256/clinical_her2_group_mean_heatmap.png",
+    ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/gigatime_rna_correlation_heatmap.png",
+        "docs/assets/clinical_her2_tile256/gigatime_rna_correlation_heatmap.png",
+    ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/top_gigatime_rna_signature_scatter.png",
+        "docs/assets/clinical_her2_tile256/top_gigatime_rna_signature_scatter.png",
+    ),
 ]
+
+ROBUSTNESS_CHANNELS = ["CD68", "PD-L1", "CD11c", "CD3", "CD4", "Ki67"]
 
 
 def parse_args() -> argparse.Namespace:
@@ -47,12 +65,43 @@ def parse_args() -> argparse.Namespace:
         "--visual-qc-cases",
         default="docs/assets/clinical_her2_visual_qc/clinical_her2_visual_qc_selected_cases.csv",
     )
+    parser.add_argument(
+        "--tile256-channel-summary",
+        default=(
+            "results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/"
+            "clinical_her2_channel_summary.csv"
+        ),
+    )
+    parser.add_argument(
+        "--tile256-pairwise-tests",
+        default=(
+            "results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/"
+            "clinical_her2_pairwise_tests.csv"
+        ),
+    )
+    parser.add_argument(
+        "--tile256-rna-correlations",
+        default=(
+            "results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/"
+            "gigatime_rna_signature_correlations.csv"
+        ),
+    )
+    parser.add_argument(
+        "--tile256-visual-qc-cases",
+        default="docs/assets/clinical_her2_visual_qc_tile256/clinical_her2_visual_qc_selected_cases.csv",
+    )
     return parser.parse_args()
 
 
 def read_rows(path: Path) -> list[dict[str, str]]:
     with path.open("r", newline="", encoding="utf-8") as handle:
         return list(csv.DictReader(handle))
+
+
+def read_optional_rows(path: Path) -> list[dict[str, str]]:
+    if not path.exists():
+        return []
+    return read_rows(path)
 
 
 def as_float(row: dict[str, str], key: str) -> float:
@@ -97,18 +146,9 @@ def copy_assets() -> None:
         shutil.copy2(src, dst)
 
 
-def build_content(args: argparse.Namespace):
-    copy_assets()
-    channels = read_rows(Path(args.channel_summary))
-    pairwise = read_rows(Path(args.pairwise_tests))
-    rna = read_rows(Path(args.rna_correlations))
-    qc_cases = read_rows(Path(args.visual_qc_cases))
-
-    top_channels = sorted(channels, key=lambda row: as_float(row, "kruskal_p_value"))[:8]
-    top_pairs = sorted(pairwise, key=lambda row: as_float(row, "mannwhitney_p_value"))[:6]
-    rna_sorted = sorted(rna, key=lambda row: as_float(row, "spearman_rho"), reverse=True)
-
-    channel_rows = [
+def channel_summary_rows(rows: list[dict[str, str]], limit: int = 8) -> list[list[str]]:
+    top_rows = sorted(rows, key=lambda row: as_float(row, "kruskal_p_value"))[:limit]
+    return [
         [
             row["channel"],
             fmt(as_float(row, "kruskal_p_value"), 4),
@@ -117,9 +157,13 @@ def build_content(args: argparse.Namespace):
             row["lowest_mean_group"],
             fmt(as_float(row, "max_minus_min_mean"), 4),
         ]
-        for row in top_channels
+        for row in top_rows
     ]
-    pair_rows = [
+
+
+def pairwise_summary_rows(rows: list[dict[str, str]], limit: int = 6) -> list[list[str]]:
+    top_rows = sorted(rows, key=lambda row: as_float(row, "mannwhitney_p_value"))[:limit]
+    return [
         [
             row["channel"],
             f"{row['group_a']} vs {row['group_b']}",
@@ -127,18 +171,25 @@ def build_content(args: argparse.Namespace):
             fmt(as_float(row, "mannwhitney_p_value"), 4),
             fmt(as_float(row, "mannwhitney_q_value_bh"), 4),
         ]
-        for row in top_pairs
+        for row in top_rows
     ]
-    rna_rows = [
+
+
+def rna_summary_rows(rows: list[dict[str, str]]) -> list[list[str]]:
+    sorted_rows = sorted(rows, key=lambda row: as_float(row, "spearman_rho"), reverse=True)
+    return [
         [
             row["channel"],
             fmt(as_float(row, "spearman_rho"), 3),
             fmt(as_float(row, "spearman_p_value"), 4),
             fmt(as_float(row, "spearman_q_value_bh"), 4),
         ]
-        for row in rna_sorted
+        for row in sorted_rows
     ]
-    qc_rows = [
+
+
+def qc_summary_rows(rows: list[dict[str, str]]) -> list[list[str]]:
+    return [
         [
             row["clinical_her2_group"],
             row["case_submitter_id"],
@@ -147,13 +198,57 @@ def build_content(args: argparse.Namespace):
             fmt(as_float(row, "mean_PD-L1"), 3),
             fmt(as_float(row, "mean_CD11c"), 3),
         ]
-        for row in qc_cases
+        for row in rows
     ]
+
+
+def robustness_comparison_rows(
+    baseline_rows: list[dict[str, str]],
+    tile256_rows: list[dict[str, str]],
+) -> list[list[str]]:
+    baseline_by_channel = {row["channel"]: row for row in baseline_rows}
+    tile256_by_channel = {row["channel"]: row for row in tile256_rows}
+    rows = []
+    for channel in ROBUSTNESS_CHANNELS:
+        baseline = baseline_by_channel.get(channel)
+        tile256 = tile256_by_channel.get(channel)
+        if not baseline or not tile256:
+            continue
+        rows.append(
+            [
+                channel,
+                fmt(as_float(baseline, "kruskal_p_value"), 4),
+                fmt(as_float(tile256, "kruskal_p_value"), 4),
+                fmt(as_float(baseline, "max_minus_min_mean"), 4),
+                fmt(as_float(tile256, "max_minus_min_mean"), 4),
+                tile256["highest_mean_group"],
+                tile256["lowest_mean_group"],
+            ]
+        )
+    return rows
+
+
+def build_content(args: argparse.Namespace):
+    copy_assets()
+    channels = read_rows(Path(args.channel_summary))
+    pairwise = read_rows(Path(args.pairwise_tests))
+    rna = read_rows(Path(args.rna_correlations))
+    qc_cases = read_rows(Path(args.visual_qc_cases))
+    tile256_channels = read_optional_rows(Path(args.tile256_channel_summary))
+    tile256_pairwise = read_optional_rows(Path(args.tile256_pairwise_tests))
+    tile256_rna = read_optional_rows(Path(args.tile256_rna_correlations))
+    tile256_qc_cases = read_optional_rows(Path(args.tile256_visual_qc_cases))
+
     return {
-        "channel_rows": channel_rows,
-        "pair_rows": pair_rows,
-        "rna_rows": rna_rows,
-        "qc_rows": qc_rows,
+        "channel_rows": channel_summary_rows(channels),
+        "pair_rows": pairwise_summary_rows(pairwise),
+        "rna_rows": rna_summary_rows(rna),
+        "qc_rows": qc_summary_rows(qc_cases),
+        "tile256_channel_rows": channel_summary_rows(tile256_channels),
+        "tile256_pair_rows": pairwise_summary_rows(tile256_pairwise),
+        "tile256_rna_rows": rna_summary_rows(tile256_rna),
+        "tile256_qc_rows": qc_summary_rows(tile256_qc_cases),
+        "tile256_compare_rows": robustness_comparison_rows(channels, tile256_channels),
     }
 
 
@@ -176,7 +271,7 @@ def build_notebook(args: argparse.Namespace, content: dict[str, list[list[str]]]
 **Simple display notebook**  
 Updated clinical HER2 pilot summary for TCGA-BRCA.
 
-**Core message:** we completed a balanced 30-slide pilot across HER2-positive, HER2-low, and HER2-zero cases. GigaTIME predicted higher immune/checkpoint-like signal in HER2-zero than HER2-low for several channels, but RNA validation was weak. The result is interesting and useful for a proposal, but it is not validated biology yet.
+**Core message:** we completed a balanced 30-slide pilot across HER2-positive, HER2-low, and HER2-zero cases. The first 64-tile run suggested higher immune/checkpoint-like signal in HER2-zero than HER2-low, and the denser 256-tile robustness run reproduced and strengthened the same CD68, PD-L1, and CD11c pattern. RNA validation remains weak, so this is still proposal-ready evidence, not validated biology.
             """
         ),
         notebook_cell(
@@ -187,7 +282,7 @@ Updated clinical HER2 pilot summary for TCGA-BRCA.
 - Images: diagnostic H&E whole-slide images.
 - Model: released GigaTIME model.
 - Groups: 10 HER2-positive, 10 HER2-low, and 10 HER2-zero cases.
-- Sampling: 64 random tissue tiles per slide.
+- Sampling: first 64 random tissue tiles per slide, then a 256-tile robustness rerun on the same 30 slides.
 - Main outputs: virtual mIF channel scores, RNA validation, and visual QC panels.
 
 **Plain-language translation:** we asked whether an AI model can see immune-like tissue patterns on ordinary H&E slides that differ across clinical HER2 groups.
@@ -201,7 +296,7 @@ The strongest pilot pattern was:
 
 > HER2-zero had higher GigaTIME-predicted immune/checkpoint signals than HER2-low, especially CD68, PD-L1, and CD11c.
 
-HER2-positive was usually between HER2-zero and HER2-low for these channels.
+HER2-positive was usually between HER2-zero and HER2-low for these channels. The 256-tile rerun made the same top signal more stable: CD68, PD-L1, and CD11c again ranked as the strongest three-group differences, with HER2-zero highest and HER2-low lowest.
 
 This should be described as a **hypothesis-generating pilot signal**, not a final biological claim.
             """
@@ -224,6 +319,32 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
             "![Clinical HER2 channel boxplots](../docs/assets/clinical_her2_findings/clinical_her2_channel_boxplots.png)"
         ),
         notebook_cell(
+            "## 256-Tile Robustness Check\n\n"
+            "We reran the same 30 selected slides with up to 256 random tissue tiles per slide. This tests whether the original 64-tile result was just a sampling accident.\n\n"
+            + markdown_table(
+                [
+                    "Channel",
+                    "64-tile p",
+                    "256-tile p",
+                    "64 max-min",
+                    "256 max-min",
+                    "256 highest",
+                    "256 lowest",
+                ],
+                content["tile256_compare_rows"],
+            )
+            + "\n\n**Interpretation:** the same HER2-zero > HER2-low immune/checkpoint pattern persisted. For CD68, PD-L1, and CD11c, the three-group p values became smaller and the group mean gaps became larger after denser sampling."
+        ),
+        notebook_cell(
+            "## 256-Tile Group Summary\n\n"
+            + markdown_table(
+                ["Channel", "Kruskal p", "BH q", "Highest group", "Lowest group", "Max-min mean"],
+                content["tile256_channel_rows"],
+            )
+            + "\n\n![256-tile clinical HER2 heatmap](../docs/assets/clinical_her2_tile256/clinical_her2_group_mean_heatmap.png)\n\n"
+            "![256-tile clinical HER2 boxplots](../docs/assets/clinical_her2_tile256/clinical_her2_channel_boxplots.png)"
+        ),
+        notebook_cell(
             "## Top Pairwise Tests\n\n"
             + markdown_table(
                 ["Channel", "Comparison", "Delta mean", "Mann-Whitney p", "BH q"],
@@ -232,10 +353,24 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
             + "\n\nThe strongest pairwise tests were mostly HER2-low versus HER2-zero, but they did not survive multiple-testing correction."
         ),
         notebook_cell(
+            "## 256-Tile Top Pairwise Tests\n\n"
+            + markdown_table(
+                ["Channel", "Comparison", "Delta mean", "Mann-Whitney p", "BH q"],
+                content["tile256_pair_rows"],
+            )
+            + "\n\nThe top 256-tile pairwise comparisons again focused on HER2-low versus HER2-zero. The best BH q values improved to about 0.113 for CD68, PD-L1, and CD11c, but they still did not cross the usual 0.05 FDR threshold."
+        ),
+        notebook_cell(
             "## RNA Validation Check\n\n"
             "We compared GigaTIME virtual channels with matched RNA-seq marker signatures from the same 30 cases.\n\n"
             + markdown_table(["Channel", "Spearman rho", "p", "BH q"], content["rna_rows"])
             + "\n\n**Interpretation:** RNA validation did not strongly confirm the virtual immune-channel signal. Ki67 had the strongest positive trend, but no channel was FDR-significant."
+        ),
+        notebook_cell(
+            "## 256-Tile RNA Validation Check\n\n"
+            "The 256-tile rerun did not solve the RNA-discordance problem. No virtual channel had an FDR-significant correlation with its matched RNA marker signature.\n\n"
+            + markdown_table(["Channel", "Spearman rho", "p", "BH q"], content["tile256_rna_rows"])
+            + "\n\n![256-tile GigaTIME RNA correlation heatmap](../docs/assets/clinical_her2_tile256/gigatime_rna_correlation_heatmap.png)"
         ),
         notebook_cell(
             "## RNA Correlation Heatmap\n\n"
@@ -246,6 +381,12 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
             "We selected the top case from each HER2 group by combined CD68 + PD-L1 + CD11c virtual signal.\n\n"
             + markdown_table(["Group", "Case", "Combined", "CD68", "PD-L1", "CD11c"], content["qc_rows"])
             + "\n\nVisual QC showed that high-scoring tiles were tissue-containing and cellular, not obvious blank background. This supports continuing the analysis, but it does not validate the virtual markers."
+        ),
+        notebook_cell(
+            "## 256-Tile Visual QC Check\n\n"
+            "The 256-tile visual QC selected the same representative cases, but the HER2-zero combined signal increased clearly.\n\n"
+            + markdown_table(["Group", "Case", "Combined", "CD68", "PD-L1", "CD11c"], content["tile256_qc_rows"])
+            + "\n\n![256-tile HER2-zero visual QC](../docs/assets/clinical_her2_visual_qc_tile256/her2_zero_TCGA-A2-A0T2_he_vs_virtual_mif_qc.png)"
         ),
         notebook_cell(
             "## Example H&E vs Virtual mIF Panels\n\n"
@@ -263,7 +404,8 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
 - The full 30-slide clinical HER2 pilot is complete.
 - The most interesting signal is HER2-zero > HER2-low for virtual CD68, PD-L1, and CD11c.
 - Visual QC suggests the signal is not simply blank background.
-- RNA validation did not strongly confirm the virtual immune-channel signal.
+- The 256-tile robustness run reproduced and strengthened the same CD68, PD-L1, and CD11c direction.
+- RNA validation still did not strongly confirm the virtual immune-channel signal.
 
 ## What We Should Not Say Yet
 
@@ -277,15 +419,14 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
             """
 ## Next Step
 
-The clean next step is robustness:
+The 256-tile robustness check is now complete. The clean next step is validation:
 
-1. Rerun the 30 selected slides with more tiles per slide, ideally 256 or 512.
-2. Repeat the clinical HER2 summary.
-3. Repeat RNA validation.
-4. Repeat visual QC on the new top-driving cases.
-5. Ask an advisor/pathologist whether the high-signal H&E regions look biologically plausible.
+1. Ask an advisor/pathologist to review the high-signal H&E tiles and virtual mIF panels.
+2. Consider a 512-tile or more exhaustive run if compute time allows.
+3. Add stronger validation layers: richer immune RNA signatures, tumor purity adjustment, and ideally an external dataset with paired H&E and real mIF.
+4. Expand beyond 10 cases per group only after the QC and validation logic is clear.
 
-**One-sentence proposal framing:** GigaTIME produced a plausible but unvalidated virtual immune/checkpoint signal separating HER2-zero from HER2-low in a balanced TCGA-BRCA pilot, motivating deeper tile sampling and orthogonal validation.
+**One-sentence proposal framing:** GigaTIME produced a reproducible but still unvalidated virtual immune/checkpoint signal separating HER2-zero from HER2-low in a balanced TCGA-BRCA pilot, motivating pathologist review and orthogonal validation.
             """
         ),
     ]
@@ -334,17 +475,17 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
         """
 <div class="hero">
   <h1>Clinical HER2 GigaTIME Findings</h1>
-  <p>Simple summary of the TCGA-BRCA pilot so far: 30 slides, three clinical HER2 groups, GigaTIME virtual mIF outputs, RNA validation, and visual QC.</p>
+  <p>Simple summary of the TCGA-BRCA pilot so far: 30 slides, three clinical HER2 groups, GigaTIME virtual mIF outputs, RNA validation, visual QC, and a 256-tile robustness check.</p>
 </div>
 """,
         section(
             "Bottom Line",
             """
 <div class="callout">
-  <p><strong>Main signal:</strong> HER2-zero had higher GigaTIME-predicted immune/checkpoint-like signal than HER2-low, especially CD68, PD-L1, and CD11c.</p>
+  <p><strong>Main signal:</strong> HER2-zero had higher GigaTIME-predicted immune/checkpoint-like signal than HER2-low, especially CD68, PD-L1, and CD11c. The same pattern persisted when the same 30 slides were rerun with up to 256 tissue tiles per slide.</p>
 </div>
 <div class="warning">
-  <p><strong>Important caution:</strong> RNA validation was weak, and the pairwise tests did not survive multiple-testing correction. This is a proposal-ready hypothesis, not a validated biological claim.</p>
+  <p><strong>Important caution:</strong> RNA validation was still weak, and the pairwise tests still did not survive multiple-testing correction. This is a proposal-ready hypothesis, not a validated biological claim.</p>
 </div>
 """,
         ),
@@ -356,7 +497,7 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
   <li>Groups: 10 HER2-positive, 10 HER2-low, and 10 HER2-zero cases.</li>
   <li>Input: diagnostic H&E whole-slide images.</li>
   <li>Model: released GigaTIME virtual mIF model.</li>
-  <li>Sampling: 64 random tissue tiles per slide.</li>
+  <li>Sampling: first 64 random tissue tiles per slide, then a 256-tile robustness rerun on the same 30 slides.</li>
 </ul>
 """,
         ),
@@ -378,9 +519,43 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
             "<img src='../docs/assets/clinical_her2_findings/clinical_her2_channel_boxplots.png' alt='Clinical HER2 channel boxplots'>",
         ),
         section(
+            "256-Tile Robustness Check",
+            "<p>We reran the same 30 selected slides with up to 256 random tissue tiles per slide. This checks whether the 64-tile result was sensitive to sparse sampling.</p>"
+            + html_table(
+                [
+                    "Channel",
+                    "64-tile p",
+                    "256-tile p",
+                    "64 max-min",
+                    "256 max-min",
+                    "256 highest",
+                    "256 lowest",
+                ],
+                content["tile256_compare_rows"],
+            )
+            + "<p class='small'>CD68, PD-L1, and CD11c kept the same direction: HER2-zero highest and HER2-low lowest. Their p values became smaller and their group mean gaps became larger.</p>",
+        ),
+        section(
+            "256-Tile Group-Level Summary",
+            html_table(
+                ["Channel", "Kruskal p", "BH q", "Highest group", "Lowest group", "Max-min mean"],
+                content["tile256_channel_rows"],
+            )
+            + "<img src='../docs/assets/clinical_her2_tile256/clinical_her2_group_mean_heatmap.png' alt='256-tile clinical HER2 heatmap'>"
+            + "<img src='../docs/assets/clinical_her2_tile256/clinical_her2_channel_boxplots.png' alt='256-tile clinical HER2 channel boxplots'>",
+        ),
+        section(
             "Top Pairwise Tests",
             html_table(["Channel", "Comparison", "Delta mean", "Mann-Whitney p", "BH q"], content["pair_rows"])
             + "<p class='small'>The strongest pairwise tests were mostly HER2-low versus HER2-zero, but none were FDR-significant.</p>",
+        ),
+        section(
+            "256-Tile Top Pairwise Tests",
+            html_table(
+                ["Channel", "Comparison", "Delta mean", "Mann-Whitney p", "BH q"],
+                content["tile256_pair_rows"],
+            )
+            + "<p class='small'>The top 256-tile pairwise tests again focused on HER2-low versus HER2-zero. The leading BH q values improved to about 0.113 for CD68, PD-L1, and CD11c, but still did not cross 0.05.</p>",
         ),
         section(
             "RNA Validation",
@@ -389,10 +564,22 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
             + "<img src='../docs/assets/clinical_her2_rna_validation/gigatime_rna_correlation_heatmap.png' alt='GigaTIME RNA correlation heatmap'>",
         ),
         section(
+            "256-Tile RNA Validation",
+            "<p>The 256-tile rerun did not solve the RNA-discordance problem. No channel was FDR-significant against its matched RNA marker signature.</p>"
+            + html_table(["Channel", "Spearman rho", "p", "BH q"], content["tile256_rna_rows"])
+            + "<img src='../docs/assets/clinical_her2_tile256/gigatime_rna_correlation_heatmap.png' alt='256-tile GigaTIME RNA correlation heatmap'>",
+        ),
+        section(
             "Visual QC",
             "<p>Top cases were selected by combined CD68 + PD-L1 + CD11c virtual signal.</p>"
             + html_table(["Group", "Case", "Combined", "CD68", "PD-L1", "CD11c"], content["qc_rows"])
             + "<p>The high-scoring tiles contain tissue and cells rather than obvious blank background. This supports follow-up, but it is not biological validation.</p>",
+        ),
+        section(
+            "256-Tile Visual QC",
+            "<p>The 256-tile visual QC selected the same representative cases. The HER2-zero representative showed a clearer combined CD68 + PD-L1 + CD11c signal.</p>"
+            + html_table(["Group", "Case", "Combined", "CD68", "PD-L1", "CD11c"], content["tile256_qc_rows"])
+            + "<img src='../docs/assets/clinical_her2_visual_qc_tile256/her2_zero_TCGA-A2-A0T2_he_vs_virtual_mif_qc.png' alt='256-tile HER2-zero visual QC'>",
         ),
         section(
             "Example QC Panels",
@@ -410,6 +597,7 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
 <ul>
   <li>We completed the balanced 30-case clinical HER2 pilot.</li>
   <li>The leading signal is HER2-zero greater than HER2-low for virtual CD68, PD-L1, and CD11c.</li>
+  <li>The 256-tile robustness run reproduced and strengthened that same direction.</li>
   <li>Visual QC makes the signal look plausible enough to follow.</li>
   <li>RNA validation did not confirm the signal strongly, so the claim must stay cautious.</li>
 </ul>
@@ -418,8 +606,8 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
         section(
             "Next Step",
             """
-<p>Rerun the same 30 slides with denser tile sampling, such as 256 or 512 tiles per slide. Then repeat the clinical HER2 summary, RNA validation, and visual QC.</p>
-<p><strong>Proposal framing:</strong> GigaTIME produced a plausible but unvalidated virtual immune/checkpoint signal separating HER2-zero from HER2-low in a balanced TCGA-BRCA pilot, motivating deeper sampling and orthogonal validation.</p>
+<p>The 256-tile robustness check is complete. The next step is validation: pathologist review of the high-signal tiles, richer RNA/tumor-purity adjusted signatures, and ideally an external dataset with paired H&E and real mIF.</p>
+<p><strong>Proposal framing:</strong> GigaTIME produced a reproducible but unvalidated virtual immune/checkpoint signal separating HER2-zero from HER2-low in a balanced TCGA-BRCA pilot, motivating pathologist review and orthogonal validation.</p>
 """,
         ),
         "</main></body></html>",

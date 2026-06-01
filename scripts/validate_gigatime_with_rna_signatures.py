@@ -268,7 +268,24 @@ def plot_top_scatter(plt, sns, merged, correlation, out_dir: Path) -> None:
     plt.close(grid.fig)
 
 
-def write_markdown(path: Path, correlation, group_summary, case_count: int) -> None:
+def describe_tile_sampling(merged) -> str:
+    if "n_tiles" not in merged.columns:
+        return "Tile sampling information was not available in the joined table."
+    tile_counts = merged.drop_duplicates("case_submitter_id")["n_tiles"].dropna()
+    if tile_counts.empty:
+        return "Tile sampling information was not available in the joined table."
+    unique_counts = sorted({int(value) for value in tile_counts})
+    if len(unique_counts) == 1:
+        return f"Tile sampling: {unique_counts[0]} tissue tiles per slide."
+    return (
+        f"Tile sampling: median {int(tile_counts.median())} tissue tiles per slide "
+        f"(range {int(tile_counts.min())}-{int(tile_counts.max())})."
+    )
+
+
+def write_markdown(path: Path, correlation, group_summary, merged) -> None:
+    case_count = merged["case_submitter_id"].nunique()
+    tile_sampling = describe_tile_sampling(merged)
     top_positive = correlation.sort_values("spearman_rho", ascending=False).head(5)
     top_abs = correlation.assign(abs_rho=correlation["spearman_rho"].abs()).sort_values("abs_rho", ascending=False).head(5)
     lines = [
@@ -276,6 +293,7 @@ def write_markdown(path: Path, correlation, group_summary, case_count: int) -> N
         "",
         f"- Cases with paired GigaTIME and RNA-seq data: {case_count}",
         f"- Channels tested: {len(correlation)}",
+        f"- {tile_sampling}",
         "- RNA values are simple marker-signature means of log2(TPM + 1).",
         "- This is an indirect validation check, not real mIF ground truth.",
         "",
@@ -310,7 +328,7 @@ def write_markdown(path: Path, correlation, group_summary, case_count: int) -> N
             "",
             "- A positive correlation means cases with higher RNA marker expression also tended to have higher GigaTIME virtual-channel activation.",
             "- A weak or negative correlation does not automatically mean GigaTIME is wrong; bulk RNA-seq and H&E-tile virtual mIF measure different biological layers.",
-            "- The current analysis has only 30 cases and uses 64 random tissue tiles per slide.",
+            f"- The current analysis has only {case_count} cases. {tile_sampling}",
             "- These results should guide follow-up validation, not final claims.",
         ]
     )
@@ -340,7 +358,7 @@ def main() -> int:
     group_summary.to_csv(out_dir / "gigatime_rna_group_summary.csv", index=False)
     plot_correlation_heatmap(plt, sns, correlation, out_dir)
     plot_top_scatter(plt, sns, merged, correlation, out_dir)
-    write_markdown(out_dir / "rna_validation_summary.md", correlation, group_summary, merged["case_submitter_id"].nunique())
+    write_markdown(out_dir / "rna_validation_summary.md", correlation, group_summary, merged)
     print(f"Wrote RNA validation outputs to {out_dir}")
     return 0
 

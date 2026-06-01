@@ -413,6 +413,53 @@ The report is intentionally simple. It emphasizes:
 
 See `docs/clinical_her2_gigatime_run.md` for the exact commands, local output paths, and current pilot table.
 
+### 16. Ran a 256-Tile Robustness Check on the Same Clinical HER2 Cohort
+
+The next robustness step was completed by rerunning the same 30 selected slides with up to 256 random tissue tiles per slide.
+
+Command:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_gigatime_tcga_brca.py \
+  --slide-table data/tcga_brca/clinical_her2_cohort_slides_files.csv \
+  --missing-slide-policy skip \
+  --out-dir results/gigatime_tcga_brca_clinical_her2_tile256 \
+  --tile-limit 256 \
+  --tile-order random \
+  --random-seed 42 \
+  --batch-size 16 \
+  --device auto \
+  --save-tile-csv
+```
+
+Then the same clinical summary, RNA validation, visual QC, and display-report steps were repeated.
+
+Main local outputs:
+
+- `results/gigatime_tcga_brca_clinical_her2_tile256/slide_scores.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/tile_scores.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/clinical_her2_summary.md`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/rna_validation_summary.md`
+- `docs/assets/clinical_her2_tile256/`
+- `docs/assets/clinical_her2_visual_qc_tile256/`
+- `docs/clinical_her2_tile_sampling_robustness.md`
+
+Robustness result:
+
+| Channel | 64-tile p | 256-tile p | 64 max-min | 256 max-min | Direction |
+|---|---:|---:|---:|---:|---|
+| CD68 | 0.0242 | 0.0167 | 0.00913 | 0.01044 | HER2-zero > HER2-low |
+| PD-L1 | 0.0423 | 0.0211 | 0.01749 | 0.02061 | HER2-zero > HER2-low |
+| CD11c | 0.0494 | 0.0384 | 0.00450 | 0.00504 | HER2-zero > HER2-low |
+
+The leading pairwise q values improved to 0.1133 for CD68, PD-L1, and CD11c, but remained above 0.05. RNA validation remained weak and no channel had an FDR-significant correlation with matched RNA marker signatures.
+
+Interpretation:
+
+- The HER2-zero greater than HER2-low virtual immune/checkpoint signal is now more robust to tile sampling.
+- The result is still not biologically validated.
+- The next proposal step should emphasize pathologist review and orthogonal validation rather than simply claiming a HER2 biology discovery.
+
 ## Initial Biological Findings From the ERBB2-Extreme Pilot
 
 The current processed dataset is too small for strong claims. The main result so far is that the workflow is feasible and produces interpretable tables and figures.
@@ -557,7 +604,7 @@ Examples:
 
 This does not prove the virtual mIF is correct, but it helps determine whether predicted tissue signals are directionally consistent with molecular data.
 
-The first implementation of this RNA validation layer is complete for simple marker signatures. It did not strongly validate the current virtual immune-channel pattern, so future validation should consider richer immune signatures, tumor purity adjustment, more tile sampling, and visual review.
+The first implementation of this RNA validation layer is complete for simple marker signatures and was repeated after the 256-tile rerun. It did not strongly validate the current virtual immune-channel pattern, so future validation should consider richer immune signatures, tumor purity adjustment, external data, and visual review.
 
 ### Analysis 5: Visual QC and Trustworthiness Review
 
@@ -569,6 +616,8 @@ For selected cases from each HER2 group:
 - Flag artifacts, blank tissue, necrosis, folds, staining variation, and suspicious tile predictions.
 
 This step is important because model outputs can look polished while still being wrong. The proposal should explicitly state that image-level QC is part of the methodology.
+
+The first 256-tile visual QC repeated the same representative cases and again showed tissue-containing high-signal tiles. The next visual step should be human review by an advisor/pathologist, not only automated figure generation.
 
 ## Paper Proposal Structure
 
@@ -601,7 +650,7 @@ This study would not claim that GigaTIME diagnoses HER2 status. Instead, it woul
 ## Current Limitations to State Clearly
 
 - The first clinical HER2 pilot has only 10 slides per group.
-- The current full clinical HER2 run uses 64 random tissue tiles per slide, which is practical for a pilot but not enough for a final whole-slide claim.
+- The first full clinical HER2 run used 64 random tissue tiles per slide; the 256-tile rerun improves sampling robustness but is still not exhaustive whole-slide analysis.
 - The earlier ERBB2 RNA-expression extreme comparison should not be treated as the clinical HER2 result.
 - Clinical HER2 fields in TCGA are incomplete for many cases.
 - TCGA clinical supplement files may contain missing, not evaluated, or inconsistent fields.
@@ -640,6 +689,7 @@ Current documentation:
 - `docs/clinical_her2_gigatime_run.md`
 - `docs/clinical_her2_rna_validation.md`
 - `docs/clinical_her2_visual_qc.md`
+- `docs/clinical_her2_tile_sampling_robustness.md`
 - `notebooks/clinical_her2_findings_simple.ipynb`
 - `notebooks/clinical_her2_findings_simple.html`
 
@@ -661,14 +711,18 @@ Current key result files:
 - `results/gigatime_tcga_brca_clinical_her2/slide_scores.csv`
 - `results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_summary.md`
 - `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_signature_correlations.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/clinical_her2_summary.md`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/gigatime_rna_signature_correlations.csv`
 - `docs/assets/clinical_her2_visual_qc/clinical_her2_visual_qc_selected_cases.csv`
+- `docs/assets/clinical_her2_visual_qc_tile256/clinical_her2_visual_qc_selected_cases.csv`
 - `docs/assets/clinical_her2_findings/clinical_her2_group_mean_heatmap.png`
+- `docs/assets/clinical_her2_tile256/clinical_her2_group_mean_heatmap.png`
 
 ## Next Immediate Step
 
-The next step is not another download. The 30-slide clinical HER2 pilot is complete. The next scientific step is validation and robustness checking:
+The next step is not another download. The 30-slide clinical HER2 pilot and first 256-tile robustness check are complete. The next scientific step is validation and trustworthiness review:
 
-- Test whether HER2-zero remains higher than HER2-low for CD68, PD-L1, and CD11c.
-- Rerun the 30 selected slides with more tiles per slide, such as 256 or 512.
-- Re-run the clinical HER2 summary, RNA validation, and visual QC after denser tile sampling.
 - Ask an advisor/pathologist to review whether the H&E regions driving high virtual CD68, PD-L1, and CD11c are biologically plausible.
+- Test richer RNA immune signatures and adjust for tumor purity or immune deconvolution if available.
+- Consider a 512-tile or more exhaustive run if compute time allows.
+- Search for an external dataset with paired H&E and real mIF for direct validation.
