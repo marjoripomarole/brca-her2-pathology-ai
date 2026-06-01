@@ -40,6 +40,18 @@ ASSET_COPIES = [
         "results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/top_gigatime_rna_signature_scatter.png",
         "docs/assets/clinical_her2_tile256/top_gigatime_rna_signature_scatter.png",
     ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/virtual_rna_program_correlation_heatmap.png",
+        "docs/assets/clinical_her2_rna_program_validation/virtual_rna_program_correlation_heatmap.png",
+    ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/rna_programs_by_her2_group.png",
+        "docs/assets/clinical_her2_rna_program_validation/rna_programs_by_her2_group.png",
+    ),
+    (
+        "results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/virtual_programs_by_her2_group.png",
+        "docs/assets/clinical_her2_rna_program_validation/virtual_programs_by_her2_group.png",
+    ),
 ]
 
 ROBUSTNESS_CHANNELS = ["CD68", "PD-L1", "CD11c", "CD3", "CD4", "Ki67"]
@@ -89,6 +101,27 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--tile256-visual-qc-cases",
         default="docs/assets/clinical_her2_visual_qc_tile256/clinical_her2_visual_qc_selected_cases.csv",
+    )
+    parser.add_argument(
+        "--rna-program-correlations",
+        default=(
+            "results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/"
+            "virtual_rna_program_correlations.csv"
+        ),
+    )
+    parser.add_argument(
+        "--rna-program-group-summary",
+        default=(
+            "results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/"
+            "rna_program_group_summary.csv"
+        ),
+    )
+    parser.add_argument(
+        "--virtual-program-group-summary",
+        default=(
+            "results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/"
+            "virtual_program_group_summary.csv"
+        ),
     )
     return parser.parse_args()
 
@@ -228,6 +261,42 @@ def robustness_comparison_rows(
     return rows
 
 
+def program_correlation_rows(rows: list[dict[str, str]], limit: int = 8) -> list[list[str]]:
+    sorted_rows = sorted(
+        rows,
+        key=lambda row: (
+            as_float(row, "spearman_q_value_bh"),
+            as_float(row, "spearman_p_value"),
+            -abs(as_float(row, "spearman_rho")),
+        ),
+    )[:limit]
+    return [
+        [
+            row["virtual_program_label"],
+            row["rna_program_label"],
+            fmt(as_float(row, "spearman_rho"), 3),
+            fmt(as_float(row, "spearman_p_value"), 4),
+            fmt(as_float(row, "spearman_q_value_bh"), 4),
+        ]
+        for row in sorted_rows
+    ]
+
+
+def program_group_rows(rows: list[dict[str, str]], limit: int = 8) -> list[list[str]]:
+    sorted_rows = sorted(rows, key=lambda row: as_float(row, "kruskal_p_value"))[:limit]
+    return [
+        [
+            row["program_label"],
+            fmt(as_float(row, "kruskal_p_value"), 4),
+            fmt(as_float(row, "kruskal_q_value_bh"), 4),
+            row["highest_mean_group"],
+            row["lowest_mean_group"],
+            fmt(as_float(row, "max_minus_min_mean"), 3),
+        ]
+        for row in sorted_rows
+    ]
+
+
 def build_content(args: argparse.Namespace):
     copy_assets()
     channels = read_rows(Path(args.channel_summary))
@@ -238,6 +307,9 @@ def build_content(args: argparse.Namespace):
     tile256_pairwise = read_optional_rows(Path(args.tile256_pairwise_tests))
     tile256_rna = read_optional_rows(Path(args.tile256_rna_correlations))
     tile256_qc_cases = read_optional_rows(Path(args.tile256_visual_qc_cases))
+    rna_program_correlations = read_optional_rows(Path(args.rna_program_correlations))
+    rna_program_groups = read_optional_rows(Path(args.rna_program_group_summary))
+    virtual_program_groups = read_optional_rows(Path(args.virtual_program_group_summary))
 
     return {
         "channel_rows": channel_summary_rows(channels),
@@ -249,6 +321,9 @@ def build_content(args: argparse.Namespace):
         "tile256_rna_rows": rna_summary_rows(tile256_rna),
         "tile256_qc_rows": qc_summary_rows(tile256_qc_cases),
         "tile256_compare_rows": robustness_comparison_rows(channels, tile256_channels),
+        "program_correlation_rows": program_correlation_rows(rna_program_correlations),
+        "rna_program_group_rows": program_group_rows(rna_program_groups),
+        "virtual_program_group_rows": program_group_rows(virtual_program_groups),
     }
 
 
@@ -271,7 +346,7 @@ def build_notebook(args: argparse.Namespace, content: dict[str, list[list[str]]]
 **Simple display notebook**  
 Updated clinical HER2 pilot summary for TCGA-BRCA.
 
-**Core message:** we completed a balanced 30-slide pilot across HER2-positive, HER2-low, and HER2-zero cases. The first 64-tile run suggested higher immune/checkpoint-like signal in HER2-zero than HER2-low, and the denser 256-tile robustness run reproduced and strengthened the same CD68, PD-L1, and CD11c pattern. RNA validation remains weak, so this is still proposal-ready evidence, not validated biology.
+**Core message:** we completed a balanced 30-slide pilot across HER2-positive, HER2-low, and HER2-zero cases. The first 64-tile run suggested higher immune/checkpoint-like signal in HER2-zero than HER2-low, and the denser 256-tile robustness run reproduced and strengthened the same CD68, PD-L1, and CD11c pattern. Marker-level and broader RNA-program validation remain weak, so this is still proposal-ready evidence, not validated biology.
             """
         ),
         notebook_cell(
@@ -373,6 +448,34 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
             + "\n\n![256-tile GigaTIME RNA correlation heatmap](../docs/assets/clinical_her2_tile256/gigatime_rna_correlation_heatmap.png)"
         ),
         notebook_cell(
+            "## Broader RNA Program Validation\n\n"
+            "We also tested broader RNA programs, such as T-cell/cytotoxic, checkpoint/IFNG, myeloid/macrophage, B-cell, proliferation, epithelial, stromal, and endothelial signatures. This is a stronger trustworthiness check than single-marker genes.\n\n"
+            + markdown_table(
+                ["Virtual program", "RNA program", "Spearman rho", "p", "BH q"],
+                content["program_correlation_rows"],
+            )
+            + "\n\n**Interpretation:** this still did not positively validate the virtual immune/checkpoint signal. The strongest FDR-significant associations were negative correlations between virtual immune/checkpoint programs and endothelial RNA signal, which should be treated as a warning sign and a reason for pathologist review.\n\n"
+            "![Virtual vs RNA program heatmap](../docs/assets/clinical_her2_rna_program_validation/virtual_rna_program_correlation_heatmap.png)"
+        ),
+        notebook_cell(
+            "## RNA Programs Across HER2 Groups\n\n"
+            + markdown_table(
+                ["RNA program", "Kruskal p", "BH q", "Highest group", "Lowest group", "Max-min mean"],
+                content["rna_program_group_rows"],
+            )
+            + "\n\nNo broad RNA immune program showed an FDR-significant HER2-group difference in this 30-case pilot.\n\n"
+            "![RNA programs by HER2 group](../docs/assets/clinical_her2_rna_program_validation/rna_programs_by_her2_group.png)"
+        ),
+        notebook_cell(
+            "## Virtual Programs Across HER2 Groups\n\n"
+            + markdown_table(
+                ["Virtual program", "Kruskal p", "BH q", "Highest group", "Lowest group", "Max-min mean"],
+                content["virtual_program_group_rows"],
+            )
+            + "\n\nThe virtual myeloid/checkpoint composite kept the HER2-zero > HER2-low direction, but remained short of FDR significance.\n\n"
+            "![Virtual programs by HER2 group](../docs/assets/clinical_her2_rna_program_validation/virtual_programs_by_her2_group.png)"
+        ),
+        notebook_cell(
             "## RNA Correlation Heatmap\n\n"
             "![GigaTIME RNA correlation heatmap](../docs/assets/clinical_her2_rna_validation/gigatime_rna_correlation_heatmap.png)"
         ),
@@ -405,7 +508,7 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
 - The most interesting signal is HER2-zero > HER2-low for virtual CD68, PD-L1, and CD11c.
 - Visual QC suggests the signal is not simply blank background.
 - The 256-tile robustness run reproduced and strengthened the same CD68, PD-L1, and CD11c direction.
-- RNA validation still did not strongly confirm the virtual immune-channel signal.
+- Single-marker and broader RNA-program validation still did not strongly confirm the virtual immune-channel signal.
 
 ## What We Should Not Say Yet
 
@@ -422,9 +525,10 @@ This should be described as a **hypothesis-generating pilot signal**, not a fina
 The 256-tile robustness check is now complete. The clean next step is validation:
 
 1. Ask an advisor/pathologist to review the high-signal H&E tiles and virtual mIF panels.
-2. Consider a 512-tile or more exhaustive run if compute time allows.
-3. Add stronger validation layers: richer immune RNA signatures, tumor purity adjustment, and ideally an external dataset with paired H&E and real mIF.
-4. Expand beyond 10 cases per group only after the QC and validation logic is clear.
+2. Add tumor purity or immune deconvolution covariates if available.
+3. Consider a 512-tile or more exhaustive run if compute time allows.
+4. Find an external dataset with paired H&E and real mIF, if possible.
+5. Expand beyond 10 cases per group only after the QC and validation logic is clear.
 
 **One-sentence proposal framing:** GigaTIME produced a reproducible but still unvalidated virtual immune/checkpoint signal separating HER2-zero from HER2-low in a balanced TCGA-BRCA pilot, motivating pathologist review and orthogonal validation.
             """
@@ -475,7 +579,7 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
         """
 <div class="hero">
   <h1>Clinical HER2 GigaTIME Findings</h1>
-  <p>Simple summary of the TCGA-BRCA pilot so far: 30 slides, three clinical HER2 groups, GigaTIME virtual mIF outputs, RNA validation, visual QC, and a 256-tile robustness check.</p>
+  <p>Simple summary of the TCGA-BRCA pilot so far: 30 slides, three clinical HER2 groups, GigaTIME virtual mIF outputs, RNA validation, RNA program validation, visual QC, and a 256-tile robustness check.</p>
 </div>
 """,
         section(
@@ -485,7 +589,7 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
   <p><strong>Main signal:</strong> HER2-zero had higher GigaTIME-predicted immune/checkpoint-like signal than HER2-low, especially CD68, PD-L1, and CD11c. The same pattern persisted when the same 30 slides were rerun with up to 256 tissue tiles per slide.</p>
 </div>
 <div class="warning">
-  <p><strong>Important caution:</strong> RNA validation was still weak, and the pairwise tests still did not survive multiple-testing correction. This is a proposal-ready hypothesis, not a validated biological claim.</p>
+  <p><strong>Important caution:</strong> Marker-level and broader RNA-program validation were still weak, and the pairwise tests still did not survive multiple-testing correction. This is a proposal-ready hypothesis, not a validated biological claim.</p>
 </div>
 """,
         ),
@@ -570,6 +674,34 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
             + "<img src='../docs/assets/clinical_her2_tile256/gigatime_rna_correlation_heatmap.png' alt='256-tile GigaTIME RNA correlation heatmap'>",
         ),
         section(
+            "Broader RNA Program Validation",
+            "<p>We also tested broader RNA programs, including T-cell/cytotoxic, checkpoint/IFNG, myeloid/macrophage, B-cell, proliferation, epithelial, stromal, and endothelial signatures.</p>"
+            + html_table(
+                ["Virtual program", "RNA program", "Spearman rho", "p", "BH q"],
+                content["program_correlation_rows"],
+            )
+            + "<p class='small'>This still did not positively validate the virtual immune/checkpoint signal. The strongest FDR-significant associations were negative correlations between virtual immune/checkpoint programs and endothelial RNA signal.</p>"
+            + "<img src='../docs/assets/clinical_her2_rna_program_validation/virtual_rna_program_correlation_heatmap.png' alt='Virtual vs RNA program correlation heatmap'>",
+        ),
+        section(
+            "RNA Programs Across HER2 Groups",
+            html_table(
+                ["RNA program", "Kruskal p", "BH q", "Highest group", "Lowest group", "Max-min mean"],
+                content["rna_program_group_rows"],
+            )
+            + "<p class='small'>No broad RNA immune program showed an FDR-significant HER2-group difference in this 30-case pilot.</p>"
+            + "<img src='../docs/assets/clinical_her2_rna_program_validation/rna_programs_by_her2_group.png' alt='RNA programs by HER2 group'>",
+        ),
+        section(
+            "Virtual Programs Across HER2 Groups",
+            html_table(
+                ["Virtual program", "Kruskal p", "BH q", "Highest group", "Lowest group", "Max-min mean"],
+                content["virtual_program_group_rows"],
+            )
+            + "<p class='small'>The virtual myeloid/checkpoint composite kept the HER2-zero greater than HER2-low direction, but remained short of FDR significance.</p>"
+            + "<img src='../docs/assets/clinical_her2_rna_program_validation/virtual_programs_by_her2_group.png' alt='Virtual programs by HER2 group'>",
+        ),
+        section(
             "Visual QC",
             "<p>Top cases were selected by combined CD68 + PD-L1 + CD11c virtual signal.</p>"
             + html_table(["Group", "Case", "Combined", "CD68", "PD-L1", "CD11c"], content["qc_rows"])
@@ -599,14 +731,14 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
   <li>The leading signal is HER2-zero greater than HER2-low for virtual CD68, PD-L1, and CD11c.</li>
   <li>The 256-tile robustness run reproduced and strengthened that same direction.</li>
   <li>Visual QC makes the signal look plausible enough to follow.</li>
-  <li>RNA validation did not confirm the signal strongly, so the claim must stay cautious.</li>
+  <li>Marker-level and RNA-program validation did not confirm the signal strongly, so the claim must stay cautious.</li>
 </ul>
 """,
         ),
         section(
             "Next Step",
             """
-<p>The 256-tile robustness check is complete. The next step is validation: pathologist review of the high-signal tiles, richer RNA/tumor-purity adjusted signatures, and ideally an external dataset with paired H&E and real mIF.</p>
+<p>The 256-tile robustness check and richer RNA-program validation are complete. The next step is trustworthiness review: pathologist review of the high-signal tiles, tumor-purity or immune-deconvolution adjustment, and ideally an external dataset with paired H&E and real mIF.</p>
 <p><strong>Proposal framing:</strong> GigaTIME produced a reproducible but unvalidated virtual immune/checkpoint signal separating HER2-zero from HER2-low in a balanced TCGA-BRCA pilot, motivating pathologist review and orthogonal validation.</p>
 """,
         ),

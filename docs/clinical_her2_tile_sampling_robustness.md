@@ -95,6 +95,18 @@ Interpretation: the tile-sampling result is more robust, but the virtual marker 
 
 ![256-tile RNA correlation heatmap](assets/clinical_her2_tile256/gigatime_rna_correlation_heatmap.png)
 
+## Broader RNA Program Follow-Up
+
+After this robustness check, the RNA validation was expanded to broader immune and tissue programs. That analysis also did not positively confirm the virtual immune/checkpoint signal.
+
+Key result:
+
+- Virtual myeloid/checkpoint remained higher in HER2-zero than HER2-low, but was not FDR-significant: p 0.0176, BH q 0.0878.
+- No broad RNA immune program showed an FDR-significant HER2-group difference.
+- The strongest FDR-significant virtual-vs-RNA associations were negative correlations with endothelial RNA signal.
+
+See `docs/clinical_her2_rna_program_validation.md`.
+
 ## Visual QC
 
 The 256-tile visual QC selected the same representative cases as the 64-tile QC:
@@ -136,6 +148,7 @@ A careful way to describe the robustness result:
 The next step should be validation rather than another simple rerun:
 
 1. Ask an advisor/pathologist to review the high-signal H&E tiles and virtual mIF panels.
-2. Test richer RNA immune signatures and adjust for tumor purity if available.
-3. Consider a 512-tile or more exhaustive run if compute time allows.
-4. Look for an external dataset with paired H&E and real mIF to directly evaluate GigaTIME predictions.
+2. Add tumor purity or immune deconvolution covariates if available.
+3. Check whether endothelial/stromal/tissue-composition differences might explain part of the virtual signal.
+4. Consider a 512-tile or more exhaustive run if compute time allows.
+5. Look for an external dataset with paired H&E and real mIF to directly evaluate GigaTIME predictions.

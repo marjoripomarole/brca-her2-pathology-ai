@@ -15,6 +15,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `scripts/summarize_her2_gigatime.py`: joins GigaTIME slide scores with ERBB2 expression and makes HER2-high/HER2-low summary figures.
 - `scripts/summarize_clinical_her2_gigatime.py`: compares GigaTIME virtual mIF outputs across clinical HER2-positive/HER2-low/HER2-zero groups.
 - `scripts/validate_gigatime_with_rna_signatures.py`: compares GigaTIME virtual channels with matched RNA-seq marker signatures as an indirect validation check.
+- `scripts/validate_gigatime_with_rna_programs.py`: compares GigaTIME virtual composite programs with broader RNA immune and tissue programs.
 - `scripts/render_virtual_mif_channel_images.py`: renders all-channel virtual mIF figures from GigaTIME tile and slide predictions.
 - `scripts/render_virtual_mif_composites.py`: reruns GigaTIME on selected tiles and renders fluorescence-style virtual mIF composites from the full predicted channel maps.
 - `scripts/render_clinical_her2_visual_qc.py`: renders clinical HER2 visual QC panels for cases driving high virtual `CD68`/`PD-L1`/`CD11c` signal.
@@ -27,6 +28,7 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `docs/clinical_her2_rna_validation.md`: first RNA-seq validation check for the clinical HER2 GigaTIME pilot.
 - `docs/clinical_her2_visual_qc.md`: first visual/spatial QC pass for the clinical HER2 virtual immune-channel signal.
 - `docs/clinical_her2_tile_sampling_robustness.md`: 256-tile robustness check showing whether the 64-tile HER2-zero versus HER2-low signal persists with denser sampling.
+- `docs/clinical_her2_rna_program_validation.md`: broader RNA immune/tissue program validation after the 256-tile robustness run.
 - `docs/advisor_brief.md`: concise project framing and discussion points.
 - `docs/current_pilot_run.md`: current two-case run status and advisor-facing caveats.
 - `configs/tcga_brca_her2.yaml`: default paths and pilot settings.
@@ -223,6 +225,14 @@ conda run -n gigatime-tcga python scripts/validate_gigatime_with_rna_signatures.
 
 This compares GigaTIME channels such as `CD68`, `PD-L1`, `CD11c`, and `Ki67` with simple matched RNA marker signatures from the available STAR-count files.
 
+To run broader RNA program validation after the 256-tile clinical HER2 rerun:
+
+```bash
+conda run -n gigatime-tcga python scripts/validate_gigatime_with_rna_programs.py
+```
+
+This compares virtual composite programs such as myeloid/checkpoint and T-cell/checkpoint with broader RNA programs such as cytotoxic T-cell, checkpoint/IFNG, myeloid/macrophage, B-cell, stromal, endothelial, epithelial, and proliferation signatures.
+
 ## 6. Render All Virtual mIF Channel Images
 
 ```bash
@@ -267,4 +277,5 @@ This writes:
 - The current clinical HER2 pilot has processed 30 selected slides: 10 HER2-positive, 10 HER2-low, and 10 HER2-zero. The strongest pilot signal is higher GigaTIME-predicted CD68, PD-L1, and CD11c in HER2-zero versus HER2-low, but these are hypothesis-generating and not FDR-significant after pairwise correction.
 - The 256-tile robustness rerun reproduced the same HER2-zero greater than HER2-low direction for CD68, PD-L1, and CD11c. The leading pairwise q values improved to about 0.113 but remained above 0.05.
 - The first RNA-seq validation check did not strongly confirm the virtual immune-channel signal; correlations between matched RNA marker signatures and GigaTIME channels were weak and not FDR-significant.
+- Broader RNA program validation also did not positively confirm the virtual immune/checkpoint signal. The strongest FDR-significant associations were negative correlations between virtual immune/checkpoint programs and endothelial RNA signal.
 - The first visual QC pass found that high virtual CD68/PD-L1/CD11c tiles were tissue-containing and cellular rather than obvious blank background, but this still does not validate the virtual marker biology.

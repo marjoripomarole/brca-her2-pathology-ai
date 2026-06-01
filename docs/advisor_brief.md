@@ -59,6 +59,22 @@ Pairwise HER2-low versus HER2-zero q values improved for CD68, PD-L1, and CD11c 
 
 The 256-tile RNA validation remained weak. No virtual channel had an FDR-significant correlation with its matched RNA marker signature. Therefore, the current interpretation is stronger sampling robustness, not biological validation.
 
+## RNA Program Validation Update
+
+We then tested broader RNA immune and tissue programs rather than only single marker-channel signatures. This compared GigaTIME virtual composite programs with RNA programs for T-cell/cytotoxic, checkpoint/IFNG, myeloid/macrophage, dendritic/APC, B-cell, proliferation, epithelial, stromal, and endothelial biology.
+
+The broader validation still did not positively confirm the virtual immune/checkpoint signal.
+
+Key findings:
+
+- The virtual myeloid/checkpoint composite retained the HER2-zero greater than HER2-low direction, but was not FDR-significant: Kruskal p 0.0176, BH q 0.0878.
+- No broad RNA immune program showed an FDR-significant HER2-group difference.
+- The strongest FDR-significant virtual-vs-RNA associations were negative correlations with endothelial RNA signal:
+  - Virtual T cell/checkpoint versus endothelial RNA: Spearman rho -0.585, BH q 0.0309.
+  - Virtual all immune/checkpoint versus endothelial RNA: Spearman rho -0.556, BH q 0.0320.
+
+This is a cautionary result. It suggests the virtual signal is reproducible inside GigaTIME, but not yet validated against orthogonal RNA evidence. It also raises the possibility that tissue composition, stromal/endothelial context, or slide sampling may be influencing the predictions.
+
 ## Why This Is a Good First Step
 
 - It is replication-first: the model is not retrained, only applied to public TCGA-BRCA data.
@@ -72,7 +88,7 @@ The 256-tile RNA validation remained weak. No virtual channel had an FDR-signifi
 - The first balanced clinical HER2 run is still small: 10 cases per group.
 - The 64-tile-per-slide run is a practical pilot, not a final whole-slide sampling strategy.
 - The 256-tile rerun supports robustness to denser sampling, but it is still not exhaustive whole-slide analysis.
-- Bulk RNA-seq is an indirect validation layer and did not strongly validate the current GigaTIME immune-channel pattern.
+- Bulk RNA-seq is an indirect validation layer and did not strongly validate the current GigaTIME immune-channel pattern, even with broader RNA programs.
 - Visual QC supports that the signal is not just blank background, but it is not biological validation.
 - TCGA slide quality, tissue sampling, and tumor purity need QC before strong biological claims.
 - GigaTIME is research-only and not a clinical HER2 classifier.

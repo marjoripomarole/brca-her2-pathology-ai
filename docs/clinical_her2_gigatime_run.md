@@ -151,15 +151,34 @@ The strongest 256-tile pairwise tests were again HER2-low versus HER2-zero. For 
 
 The 256-tile RNA validation still did not show FDR-significant correlations between GigaTIME virtual channels and matched RNA marker signatures. The robustness result therefore strengthens the sampling argument but does not validate the marker biology.
 
+## Broader RNA Program Validation Update
+
+The next validation layer tested broader RNA immune and tissue programs against GigaTIME virtual composite programs.
+
+Command:
+
+```bash
+conda run -n gigatime-tcga python scripts/validate_gigatime_with_rna_programs.py
+```
+
+Main result:
+
+- The virtual myeloid/checkpoint composite retained the HER2-zero greater than HER2-low direction, but did not pass FDR correction: p 0.0176, BH q 0.0878.
+- No broad RNA immune program showed an FDR-significant HER2-group difference.
+- The strongest FDR-significant virtual-vs-RNA associations were negative correlations with endothelial RNA signal.
+
+This result means the virtual signal is internally reproducible but still not orthogonally validated by RNA. It also raises a tissue-composition question that should be reviewed with pathology input.
+
 ## Next Step
 
-The next analysis step is validation. The 256-tile rerun supports that the HER2-zero versus HER2-low signal is not simply a 64-tile sampling accident. However, RNA-seq validation remains weak, and visual QC still does not establish biological validity.
+The next analysis step is trustworthiness review. The 256-tile rerun supports that the HER2-zero versus HER2-low signal is not simply a 64-tile sampling accident. However, marker-level and broader RNA validation remain weak, and visual QC still does not establish biological validity.
 
 1. Ask an advisor/pathologist to review the source H&E tiles and virtual mIF composites for cases driving high `CD68`, `PD-L1`, and `CD11c`.
-2. Compare GigaTIME predictions with richer orthogonal immune evidence, such as RNA-derived immune signatures, tumor purity estimates, or published TCGA immune subtype annotations.
+2. Compare GigaTIME predictions with tumor purity estimates, immune deconvolution, or published TCGA immune subtype annotations.
 3. Consider a 512-tile or more exhaustive run if compute time allows.
 4. Expand beyond the 30 selected cases if more clinical HER2-zero cases can be reliably included.
 
 See `docs/clinical_her2_rna_validation.md` for the first RNA-seq marker-signature comparison.
 See `docs/clinical_her2_visual_qc.md` for the first H&E-versus-virtual-mIF visual QC pass.
 See `docs/clinical_her2_tile_sampling_robustness.md` for the 256-tile robustness check.
+See `docs/clinical_her2_rna_program_validation.md` for the broader RNA program validation check.

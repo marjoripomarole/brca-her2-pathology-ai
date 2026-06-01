@@ -106,6 +106,18 @@ The 256-tile RNA validation included all 30 paired cases. Tile sampling had a me
 
 This means the denser tile sampling strengthened the slide-level HER2-zero versus HER2-low pattern, but it did not make the virtual immune channels align with bulk RNA marker signatures.
 
+## Broader RNA Program Follow-Up
+
+The next validation step expanded from marker-level RNA signatures to broader immune and tissue RNA programs. See `docs/clinical_her2_rna_program_validation.md`.
+
+That broader analysis also did not positively validate the virtual immune/checkpoint signal:
+
+- No broad RNA immune program showed an FDR-significant HER2-group difference.
+- The virtual myeloid/checkpoint composite retained the HER2-zero greater than HER2-low direction, but did not pass FDR correction.
+- The strongest FDR-significant virtual-vs-RNA associations were negative correlations with endothelial RNA signal.
+
+This means the virtual signal is reproducible inside GigaTIME, but it is still not supported by orthogonal bulk RNA evidence.
+
 ## Proposal Language
 
 A careful way to describe this result:
@@ -117,6 +129,5 @@ A careful way to describe this result:
 The next step should focus on stronger validation, because sparse 64-tile sampling is probably not the whole explanation for the RNA-discordant result:
 
 - Ask an advisor/pathologist to review whether high virtual signal appears in plausible H&E tissue regions or in artifacts, folds, necrosis, background, or low-quality tiles.
-- Test richer RNA immune signatures instead of only simple marker genes.
 - Add tumor purity or immune deconvolution covariates if available.
 - Look for an external dataset with paired H&E and real mIF for direct validation.

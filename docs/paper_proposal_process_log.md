@@ -460,6 +460,61 @@ Interpretation:
 - The result is still not biologically validated.
 - The next proposal step should emphasize pathologist review and orthogonal validation rather than simply claiming a HER2 biology discovery.
 
+### 17. Tested Broader RNA Immune and Tissue Programs
+
+After the marker-level RNA validation remained weak, the next validation step compared GigaTIME virtual composite programs with broader RNA programs.
+
+Command:
+
+```bash
+conda run -n gigatime-tcga python scripts/validate_gigatime_with_rna_programs.py
+```
+
+Main local outputs:
+
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/case_rna_programs.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/case_virtual_programs.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/joined_virtual_rna_programs.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/virtual_rna_program_correlations.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/rna_program_group_summary.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/virtual_program_group_summary.csv`
+- `docs/clinical_her2_rna_program_validation.md`
+- `docs/assets/clinical_her2_rna_program_validation/`
+
+Virtual programs tested:
+
+- Myeloid/checkpoint: `CD68`, `CD11c`, `PD-L1`
+- T cell/checkpoint: `CD3`, `CD4`, `CD8`, `PD-1`
+- All immune/checkpoint: `CD3`, `CD4`, `CD8`, `CD20`, `CD68`, `CD11c`, `PD-1`, `PD-L1`
+- Proliferation: `Ki67`
+- Epithelial: `CK`
+
+RNA programs tested:
+
+- T cell/cytotoxic
+- Checkpoint/IFNG
+- Myeloid/macrophage
+- Dendritic/APC
+- B cell
+- Proliferation
+- Epithelial/tumor
+- Stromal/fibroblast
+- Endothelial
+
+Main result:
+
+- The virtual myeloid/checkpoint composite retained the HER2-zero greater than HER2-low direction, but did not pass FDR correction: p 0.0176, BH q 0.0878.
+- No broad RNA immune program showed an FDR-significant HER2-group difference.
+- The strongest FDR-significant virtual-vs-RNA associations were negative correlations with endothelial RNA signal:
+  - Virtual T cell/checkpoint versus endothelial RNA: Spearman rho -0.585, BH q 0.0309.
+  - Virtual all immune/checkpoint versus endothelial RNA: Spearman rho -0.556, BH q 0.0320.
+
+Interpretation:
+
+- The virtual signal is reproducible within GigaTIME and stable across tile sampling.
+- The signal is still not validated by orthogonal RNA evidence.
+- The endothelial negative correlations raise a tissue-composition concern that should be reviewed before any strong biological claim.
+
 ## Initial Biological Findings From the ERBB2-Extreme Pilot
 
 The current processed dataset is too small for strong claims. The main result so far is that the workflow is feasible and produces interpretable tables and figures.
@@ -671,6 +726,7 @@ Current workflow scripts:
 - `scripts/summarize_her2_gigatime.py`
 - `scripts/summarize_clinical_her2_gigatime.py`
 - `scripts/validate_gigatime_with_rna_signatures.py`
+- `scripts/validate_gigatime_with_rna_programs.py`
 - `scripts/render_clinical_her2_visual_qc.py`
 - `scripts/build_clinical_her2_findings_report.py`
 - `scripts/render_he_slide_images.py`
@@ -690,6 +746,7 @@ Current documentation:
 - `docs/clinical_her2_rna_validation.md`
 - `docs/clinical_her2_visual_qc.md`
 - `docs/clinical_her2_tile_sampling_robustness.md`
+- `docs/clinical_her2_rna_program_validation.md`
 - `notebooks/clinical_her2_findings_simple.ipynb`
 - `notebooks/clinical_her2_findings_simple.html`
 
@@ -713,16 +770,19 @@ Current key result files:
 - `results/gigatime_tcga_brca_clinical_her2/rna_validation/gigatime_rna_signature_correlations.csv`
 - `results/gigatime_tcga_brca_clinical_her2_tile256/clinical_summary/clinical_her2_summary.md`
 - `results/gigatime_tcga_brca_clinical_her2_tile256/rna_validation/gigatime_rna_signature_correlations.csv`
+- `results/gigatime_tcga_brca_clinical_her2_tile256/rna_program_validation/virtual_rna_program_correlations.csv`
 - `docs/assets/clinical_her2_visual_qc/clinical_her2_visual_qc_selected_cases.csv`
 - `docs/assets/clinical_her2_visual_qc_tile256/clinical_her2_visual_qc_selected_cases.csv`
 - `docs/assets/clinical_her2_findings/clinical_her2_group_mean_heatmap.png`
 - `docs/assets/clinical_her2_tile256/clinical_her2_group_mean_heatmap.png`
+- `docs/assets/clinical_her2_rna_program_validation/virtual_rna_program_correlation_heatmap.png`
 
 ## Next Immediate Step
 
-The next step is not another download. The 30-slide clinical HER2 pilot and first 256-tile robustness check are complete. The next scientific step is validation and trustworthiness review:
+The next step is not another download. The 30-slide clinical HER2 pilot, first 256-tile robustness check, and broader RNA-program validation are complete. The next scientific step is trustworthiness review:
 
 - Ask an advisor/pathologist to review whether the H&E regions driving high virtual CD68, PD-L1, and CD11c are biologically plausible.
-- Test richer RNA immune signatures and adjust for tumor purity or immune deconvolution if available.
+- Adjust for tumor purity or immune deconvolution if available.
+- Check whether endothelial/stromal/tissue-composition differences explain part of the virtual signal.
 - Consider a 512-tile or more exhaustive run if compute time allows.
 - Search for an external dataset with paired H&E and real mIF for direct validation.

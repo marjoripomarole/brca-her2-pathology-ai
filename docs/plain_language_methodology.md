@@ -344,6 +344,22 @@ In plain language: when the model looked at more pieces of each slide, the same 
 
 The most important caution is that matched RNA-seq validation was still weak after the 256-tile run. So the result is more robust to tile sampling, but still not validated by an independent biological measurement.
 
+### Broader RNA program validation
+
+The next validation step asked a broader question:
+
+> If GigaTIME predicts immune-like signal, do the same cases also show higher RNA programs for immune biology?
+
+Instead of only checking one marker at a time, this step tested larger RNA programs for T cells, checkpoint/IFNG biology, macrophages, B cells, proliferation, epithelial/tumor signal, stroma, and endothelial tissue.
+
+The answer was still cautious:
+
+- The GigaTIME virtual myeloid/checkpoint program still showed HER2-zero higher than HER2-low.
+- Broad RNA immune programs did not show a matching significant HER2-zero higher than HER2-low pattern.
+- The strongest significant virtual-vs-RNA associations were negative correlations with endothelial RNA signal.
+
+In plain language: the AI signal is repeatable inside the image model, but the RNA data still does not confirm that it represents real immune-marker biology.
+
 ## 8. What the Output Tables Mean
 
 ### `slide_scores.csv`
@@ -436,7 +452,7 @@ The current pilot has not yet:
 - Trained or fine-tuned a new model.
 - Produced a clinically deployable classifier.
 
-The project has now performed a first indirect RNA-seq validation check using simple marker-gene signatures, including after the 256-tile rerun. That check did not strongly confirm the current virtual immune-channel pattern, so it should be treated as an early caution rather than a completed validation.
+The project has now performed indirect RNA-seq validation using simple marker-gene signatures and broader RNA immune/tissue programs. These checks did not strongly confirm the current virtual immune-channel pattern, so they should be treated as cautionary evidence rather than completed validation.
 
 These limitations are important. The current goal is proof of workflow and early biological exploration, not a final scientific claim.
 
@@ -471,7 +487,7 @@ The 256-tile rerun suggests the pattern remains when more tissue tiles are sampl
 - Even more tiles per slide are sampled or more complete whole-slide coverage is used.
 - More cases are included if reliable HER2-zero cases are available.
 - A human reviews representative H&E tiles and virtual mIF composites for plausibility.
-- Richer validation layers are added, such as tumor purity adjustment, published immune subtype annotations, or an external dataset with real mIF.
+- Richer validation layers are added, such as tumor purity adjustment, immune deconvolution, published immune subtype annotations, or an external dataset with real mIF.
 
 ## 13. Reproducible Workflow Summary
 
@@ -513,7 +529,8 @@ If you are reading the project for the first time, start with:
 2. `docs/clinical_her2_cohort_selection.md` for the selected 30-case cohort.
 3. `docs/clinical_her2_gigatime_run.md` for the current full clinical HER2 result.
 4. `docs/clinical_her2_tile_sampling_robustness.md` for the 256-tile robustness check.
-5. This document for the conceptual explanation.
-6. `docs/advisor_brief.md` for the short advisor-facing summary.
+5. `docs/clinical_her2_rna_program_validation.md` for the broader RNA validation check.
+6. This document for the conceptual explanation.
+7. `docs/advisor_brief.md` for the short advisor-facing summary.
 
 The most important caution is that GigaTIME outputs are predicted virtual mIF research features. They are not real multiplex immunofluorescence measurements and should be validated before making biological or clinical claims.

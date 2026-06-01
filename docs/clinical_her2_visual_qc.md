@@ -133,5 +133,6 @@ The denser 256-tile sampling step is now complete. The next methodological impro
 
 - Ask an advisor/pathologist to review whether the high-signal H&E regions are plausible.
 - Consider a 512-tile or more exhaustive run if compute time allows.
-- Compare the predictions with richer RNA immune signatures, tumor purity estimates, and immune deconvolution outputs.
+- Compare the predictions with tumor purity estimates and immune deconvolution outputs.
+- Review whether endothelial/stromal/tissue-composition differences may explain part of the virtual signal, based on the broader RNA program validation.
 - Look for an external dataset with paired H&E and real mIF for direct validation.
