@@ -1,0 +1,41 @@
+{
+  "n_slides": 183,
+  "n_high_label_slide_trust": 171,
+  "n_review_before_primary_analysis": 9,
+  "n_exclude_from_primary_analysis": 3,
+  "n_processed_with_tissue_qc": 60,
+  "n_processed_strict_tissue_qc": 50,
+  "n_female_patients": 180,
+  "label_slide_trust_counts": {
+    "high_label_and_slide_trust": 171,
+    "review_before_primary_analysis": 9,
+    "exclude_from_primary_analysis": 3
+  },
+  "processed_tissue_qc_counts": {
+    "not_processed_yet": 123,
+    "strict_pass": 50,
+    "moderate_pass": 7,
+    "weak_or_review": 3
+  },
+  "her2_detail_subgroup_counts": {
+    "HER2-zero_IHC0_ISH-not-evaluated": 43,
+    "HER2-positive_IHC3": 31,
+    "HER2-low_IHC1_ISH-not-evaluated": 30,
+    "HER2-low_IHC2_ISH-negative": 23,
+    "HER2-zero_IHC0_ISH-negative": 18,
+    "HER2-positive_IHC2_ISH-positive": 15,
+    "HER2-positive_ISH-positive_IHC-missing": 10,
+    "HER2-low_IHC1_ISH-negative": 8,
+    "HER2-positive_IHC3_ISH-negative_discordant": 4,
+    "HER2-positive_IHC1_ISH-positive_discordant": 1
+  },
+  "patient_gender_counts": {
+    "FEMALE": 180,
+    "MALE": 3
+  },
+  "output_csv": "data/tcga_brca/clinical_her2_laptop_balanced61_trustworthy_slides.csv",
+  "output_tracked_csv": "docs/assets/clinical_her2_trustworthy_slide_list/trustworthy_slides.csv",
+  "output_high_trust_csv": "data/tcga_brca/clinical_her2_laptop_balanced61_high_trust_slides.csv",
+  "output_tracked_high_trust_csv": "docs/assets/clinical_her2_trustworthy_slide_list/high_trust_slides.csv",
+  "output_markdown": "docs/clinical_her2_trustworthy_slide_list.md"
+}
