@@ -1,6 +1,6 @@
 # Clinical HER2 Visual QC
 
-Status: Historical 30-slide visual QC report. It remains useful for visual trustworthiness review, but the latest statistical result is summarized in `docs/clinical_her2_expanded20_results.md`.
+Status: Historical 30-slide visual QC report. It remains useful for visual trustworthiness review, but the current statistical result is summarized in `docs/clinical_her2_high_trust_tile128_results.md`.
 
 This document records the first visual/spatial QC pass for the 30-slide clinical HER2 GigaTIME pilot.
 

@@ -1,6 +1,6 @@
 # Clinical HER2 Cohort Selection
 
-Status: Current expanded cohort selection. This is the 20/20/20 cohort used for the latest 60-slide GigaTIME run.
+Status: Historical expanded cohort selection. This is the 20/20/20 cohort used for the previous 60-slide GigaTIME run.
 
 This file summarizes the balanced clinical HER2-positive / HER2-low / HER2-zero cohort selected for the expanded GigaTIME run.
 

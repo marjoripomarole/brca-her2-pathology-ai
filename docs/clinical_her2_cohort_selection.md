@@ -1,6 +1,6 @@
 # Clinical HER2 Cohort Selection
 
-Status: Historical 10/10/10 cohort selection. For the latest expanded 20/20/20 cohort, use `docs/clinical_her2_cohort_expanded20_selection.md`.
+Status: Historical 10/10/10 cohort selection. For the current primary cohort, use `docs/clinical_her2_trustworthy_slide_list.md` and `docs/clinical_her2_high_trust_tile128_results.md`.
 
 This file summarizes the balanced clinical HER2-positive / HER2-low / HER2-zero pilot cohort used for the original 30-slide GigaTIME run.
 

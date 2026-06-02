@@ -1,16 +1,19 @@
-# TCGA-BRCA GigaTIME HER2 Workflow
+# BRCA HER2 Pathology AI
 
-This project wraps the official GigaTIME implementation for a TCGA-BRCA pilot focused on HER2/ERBB2 expression.
+Repository slug: `brca-her2-pathology-ai`
 
-The goal is to generate virtual multiplex immunofluorescence (mIF) features from TCGA-BRCA diagnostic H&E whole-slide images, join those features to clinical HER2 labels and ERBB2 RNA expression, and produce advisor-ready summary tables and figures.
+This repository is a computational pathology workspace for studying HER2-related breast cancer states in TCGA-BRCA diagnostic H&E whole-slide images. GigaTIME is the current first image model used here, but the project is intentionally broader than one model: it includes slide download, HER2 label cleanup, virtual mIF feature extraction, RNA/ERBB2 context checks, visual QC, confounder analyses, and exploratory classifiers.
+
+The goal is to generate image-derived features from TCGA-BRCA diagnostic H&E whole-slide images, join those features to clinical HER2 labels and ERBB2 RNA expression, and produce advisor-ready summary tables and figures for HER2-positive, HER2-low, and HER2-zero research questions.
 
 ## What This Contains
 
-- `external/GigaTIME/`: cloned official GigaTIME code from `prov-gigatime/GigaTIME`.
+- `external/GigaTIME/`: cloned official GigaTIME code from `prov-gigatime/GigaTIME`, currently used as the virtual mIF feature generator.
 - `scripts/gdc_query_tcga_brca.py`: queries GDC for TCGA-BRCA diagnostic slides and STAR-count RNA-seq files, writes GDC manifests, and can extract ERBB2 expression.
 - `scripts/build_tcga_brca_clinical_her2_labels.py`: queries the GDC TCGA-BRCA clinical supplement and builds reproducible clinical HER2-positive/HER2-low/HER2-zero labels.
 - `scripts/select_clinical_her2_cohort.py`: selects a balanced clinical HER2-positive/HER2-low/HER2-zero cohort and writes a slide manifest for the next GigaTIME run.
 - `scripts/download_clinical_her2_cohort_slides.py`: downloads the selected clinical HER2 cohort slide files from GDC by file ID and writes a resumable status JSON.
+- `scripts/build_tcga_her2_trustworthy_slide_list.py`: checks the 61/61/61 cohort for HER2 label trust, slide metadata, file-size integrity, and OpenSlide readability, then writes high-trust slide lists.
 - `scripts/run_gigatime_tcga_brca.py`: tiles TCGA-BRCA `.svs` slides, runs the official GigaTIME model, and aggregates virtual mIF channels per slide.
 - `scripts/summarize_her2_gigatime.py`: joins GigaTIME slide scores with ERBB2 expression and makes HER2-high/HER2-low summary figures.
 - `scripts/summarize_clinical_her2_gigatime.py`: compares GigaTIME virtual mIF outputs across clinical HER2-positive/HER2-low/HER2-zero groups.
@@ -20,6 +23,21 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `scripts/cleanup_gigatime_tile_features.py`: builds pre-classifier cleaned GigaTIME feature views from cellular and CK-enriched tile subsets.
 - `scripts/train_her2_classifier_baseline.py`: trains first slide-level HER2 classifier baselines from GigaTIME features with leave-one-out cross-validation.
 - `scripts/train_her2_cleaned_classifier_comparison.py`: reruns HER2 classifiers across all-tissue, cellular-tissue, and CK-enriched GigaTIME feature views.
+- `scripts/analyze_high_trust_her2_sensitivity.py`: runs ER/PR-adjusted and HER2 IHC/ISH subgroup sensitivity checks for the high-trust result.
+- `scripts/compare_gigatime_run_agreement.py`: compares overlapping slide-level GigaTIME outputs across the earlier 256-tile expanded run and current 128-tile high-trust run.
+- `scripts/analyze_high_trust_case_drivers.py`: ranks case-level HER2-low versus HER2-zero driver scores, view stability, classifier errors, and manual-review priorities.
+- `scripts/render_case_driver_visual_qc.py`: renders H&E plus virtual mIF panels for representative case-driver and opposite-profile review cases.
+- `scripts/analyze_tissue_composition_sensitivity.py`: quantifies whether HER2-low versus HER2-zero GigaTIME signals track low-marker/stromal-like tissue composition.
+- `scripts/analyze_tumor_proxy_sensitivity.py`: tests whether HER2-low versus HER2-zero statistics and classifiers survive stricter virtual tumor-rich proxy tile filters.
+- `scripts/analyze_classifier_permutation_sanity.py`: runs shuffled-label sanity checks for the selected HER2-low versus HER2-zero classifiers.
+- `scripts/analyze_nested_classifier_model_selection.py`: repeats low-vs-zero classifier feature-set selection inside cross-validation and compares it with a shuffled-label null.
+- `scripts/analyze_clinical_covariate_sensitivity.py`: tests whether HER2-low versus HER2-zero findings are confounded by clinical, TCGA source-site, or slide-size covariates.
+- `scripts/analyze_matched_low_zero_sensitivity.py`: builds source-site and slide-size matched HER2-low/HER2-zero sensitivity subsets after the confounder check.
+- `scripts/analyze_source_site_generalization.py`: compares ordinary cross-validation with leave-TCGA-source-site-out validation for HER2-low versus HER2-zero classifiers.
+- `scripts/analyze_within_source_site_low_zero.py`: restricts HER2-low/HER2-zero analysis to TCGA source sites containing both classes and runs site-fixed channel tests plus mixed-site classifiers.
+- `scripts/audit_her2_isoform_validation_feasibility.py`: audits whether the current local RNA files can support Guardia-style HER2 isoform validation.
+- `scripts/analyze_local_erbb2_expression_validation.py`: extracts ERBB2 gene-level TPM from all local STAR count files and checks whether clinical HER2/GigaTIME findings track gene-level ERBB2 expression.
+- `scripts/run_hoptimus_tcga_brca.py`: extracts H-Optimus/H0-mini tile embeddings from TCGA-BRCA diagnostic H&E slides and aggregates them to slide-level embedding features.
 - `scripts/render_virtual_mif_channel_images.py`: renders all-channel virtual mIF figures from GigaTIME tile and slide predictions.
 - `scripts/render_virtual_mif_composites.py`: reruns GigaTIME on selected tiles and renders fluorescence-style virtual mIF composites from the full predicted channel maps.
 - `scripts/render_clinical_her2_visual_qc.py`: renders clinical HER2 visual QC panels for cases driving high virtual `CD68`/`PD-L1`/`CD11c` signal.
@@ -38,7 +56,27 @@ The goal is to generate virtual multiplex immunofluorescence (mIF) features from
 - `docs/clinical_her2_classifier_baseline.md`: first diagnostic-model style classifier baseline for HER2-positive/negative, HER2-low/zero, and three-class HER2 prediction.
 - `docs/clinical_her2_cleaned_classifier_comparison.md`: classifier comparison after GigaTIME tile cleanup and CK-enriched feature selection.
 - `docs/clinical_her2_expanded20_results.md`: presentation-oriented summary of the expanded 20/20/20 clinical HER2 run.
+- `docs/tcga_her2_label_quality_assessment.md`: source-backed assessment of TCGA-BRCA HER2 label quality, issues, assumptions, and checks.
+- `docs/clinical_her2_trustworthy_slide_list.md`: trustworthy-slide list for the 183-slide 61/61/61 downloaded cohort.
+- `docs/clinical_her2_high_trust_tile128_results.md`: current strict high-trust 171-slide GigaTIME/HER2 result.
+- `docs/clinical_her2_high_trust_tile128_gigatime_data_cleanup.md`: current high-trust tile-cleanup sensitivity analysis.
+- `docs/clinical_her2_high_trust_tile128_cleaned_classifier_comparison.md`: current high-trust cleaned classifier comparison.
+- `docs/clinical_her2_high_trust_tile128_case_driver_analysis.md`: case-level HER2-low versus HER2-zero driver analysis and manual-review shortlist.
+- `docs/clinical_her2_high_trust_tile128_case_driver_visual_qc.md`: small H&E plus virtual mIF visual QC set for the case-driver shortlist.
+- `docs/clinical_her2_high_trust_tile128_tissue_composition_sensitivity.md`: quantifies the tissue-composition caveat for the HER2-low versus HER2-zero result.
+- `docs/clinical_her2_high_trust_tile128_tumor_proxy_sensitivity.md`: stricter virtual CK/tumor-rich proxy sensitivity analysis for the HER2-low versus HER2-zero result.
+- `docs/clinical_her2_high_trust_tile128_classifier_permutation_sanity.md`: shuffled-label sanity check for the selected HER2-low versus HER2-zero classifiers.
+- `docs/clinical_her2_high_trust_tile128_nested_classifier_model_selection.md`: stricter nested model-selection classifier check for HER2-low versus HER2-zero.
+- `docs/clinical_her2_high_trust_tile128_clinical_covariate_sensitivity.md`: clinical/source-site/slide-size confounder sensitivity for the HER2-low versus HER2-zero result.
+- `docs/clinical_her2_high_trust_tile128_matched_low_zero_sensitivity.md`: source-site and slide-size matched sensitivity check for the HER2-low versus HER2-zero result.
+- `docs/clinical_her2_high_trust_tile128_source_site_generalization.md`: leave-source-site-out validation for HER2-low versus HER2-zero classifiers.
+- `docs/clinical_her2_high_trust_tile128_within_source_site_low_zero.md`: within-source-site low-vs-zero sensitivity using only TCGA source sites with both HER2-low and HER2-zero cases.
+- `docs/clinical_her2_high_trust_tile128_local_erbb2_validation.md`: expanded local STAR gene-level ERBB2 validation for clinical HER2 labels and GigaTIME low/zero findings.
+- `docs/clinical_her2_high_trust_tile128_erpr_subgroup_sensitivity.md`: ER/PR-adjusted and HER2 IHC/ISH subgroup sensitivity analysis for the current high-trust result.
+- `docs/clinical_her2_high_trust_tile128_vs_expanded20_tile256_agreement.md`: channel-agreement and HER2-low/zero direction robustness across 128-tile and 256-tile runs.
+- `docs/her2_isoform_validation_feasibility.md`: audit showing that current local STAR gene-count files support gene-level RNA context but not direct HER2 isoform validation.
 - `docs/her2_isoform_state_hypothesis.md`: sharper paper-proposal framing around HER2 state, isoform hypotheses, targetability, and language guardrails.
+- `docs/hoptimus_embedding_baseline.md`: first-run plan and commands for the H-Optimus/H0-mini embedding baseline.
 - `docs/advisor_brief.md`: concise project framing and discussion points.
 - `docs/current_pilot_run.md`: current two-case run status and advisor-facing caveats.
 - `configs/tcga_brca_her2.yaml`: default paths and pilot settings.
@@ -178,6 +216,55 @@ Key output:
 
 For the first advisor meeting, `--tile-limit 512` is enough to demonstrate the pipeline. Increase or remove it for the full run.
 
+## 4b. Extract H-Optimus/H0-Mini Embeddings
+
+H-Optimus is the next generic H&E foundation-model baseline after the GigaTIME virtual mIF analysis. The first practical run should use the laptop-friendlier `h0-mini` preset, then optionally repeat with full `H-optimus-0` if the hardware and Hugging Face access are ready.
+
+Both presets are gated on Hugging Face. Accept the model terms and set a read token:
+
+```bash
+export HF_TOKEN=<huggingface_read_token>
+```
+
+Check runtime and slide discovery:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_hoptimus_tcga_brca.py --dry-run
+```
+
+Inspect one slide's extraction geometry without loading the model or running inference:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_hoptimus_tcga_brca.py \
+  --dry-run \
+  --inspect-slide \
+  --max-slides 1
+```
+
+Tiny smoke run:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_hoptimus_tcga_brca.py \
+  --model-preset h0-mini \
+  --out-dir results/hoptimus_tcga_brca_high_trust_tile224_smoke \
+  --max-slides 2 \
+  --tile-limit 16 \
+  --batch-size 4
+```
+
+Scaled high-trust run:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_hoptimus_tcga_brca.py \
+  --model-preset h0-mini \
+  --out-dir results/hoptimus_tcga_brca_high_trust_tile224 \
+  --tile-limit 64 \
+  --batch-size 8 \
+  --resume
+```
+
+See `docs/hoptimus_embedding_baseline.md` for the full H-Optimus-0 command and analysis plan.
+
 To run GigaTIME only on the selected clinical HER2 cohort and skip slides that have not been downloaded yet:
 
 ```bash
@@ -302,9 +389,75 @@ This writes:
 - `notebooks/clinical_her2_findings_simple.ipynb`
 - `notebooks/clinical_her2_findings_simple.html`
 
+To rerun the shuffled-label classifier sanity check:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_classifier_permutation_sanity.py
+```
+
+This writes the observed-versus-null classifier summary to `docs/clinical_her2_high_trust_tile128_classifier_permutation_sanity.md` and the permutation figures to `docs/assets/clinical_her2_high_trust_tile128_classifier_permutation/`.
+
+To rerun the stricter nested classifier model-selection check:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_nested_classifier_model_selection.py
+```
+
+This writes the nested observed-versus-null classifier summary to `docs/clinical_her2_high_trust_tile128_nested_classifier_model_selection.md` and figures to `docs/assets/clinical_her2_high_trust_tile128_nested_classifier/`.
+
+To rerun the clinical/source-site/slide-size confounder check:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_clinical_covariate_sensitivity.py
+```
+
+This writes the confounder report to `docs/clinical_her2_high_trust_tile128_clinical_covariate_sensitivity.md` and figures to `docs/assets/clinical_her2_high_trust_tile128_clinical_covariates/`.
+
+To rerun the matched HER2-low versus HER2-zero sensitivity check:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_matched_low_zero_sensitivity.py
+```
+
+This writes the matched-subset report to `docs/clinical_her2_high_trust_tile128_matched_low_zero_sensitivity.md` and figures to `docs/assets/clinical_her2_high_trust_tile128_matched_low_zero/`.
+
+To rerun the source-site held-out generalization check:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_source_site_generalization.py
+```
+
+This writes the source-site generalization report to `docs/clinical_her2_high_trust_tile128_source_site_generalization.md` and figures to `docs/assets/clinical_her2_high_trust_tile128_source_site_generalization/`.
+
+To rerun the within-source-site low-vs-zero sensitivity check:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_within_source_site_low_zero.py
+```
+
+This writes the mixed-site sensitivity report to `docs/clinical_her2_high_trust_tile128_within_source_site_low_zero.md`, figures to `docs/assets/clinical_her2_high_trust_tile128_within_source_site/`, and machine-readable outputs to `results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/within_source_site_low_zero/`.
+
+To rerun the HER2 isoform validation feasibility audit:
+
+```bash
+python3 scripts/audit_her2_isoform_validation_feasibility.py
+```
+
+This writes the feasibility report to `docs/her2_isoform_validation_feasibility.md` and machine-readable outputs to `results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/her2_isoform_validation_feasibility/`.
+
+To rerun the expanded local gene-level ERBB2 validation:
+
+```bash
+conda run -n gigatime-tcga python scripts/analyze_local_erbb2_expression_validation.py
+```
+
+This writes the ERBB2 validation report to `docs/clinical_her2_high_trust_tile128_local_erbb2_validation.md`, figures to `docs/assets/clinical_her2_high_trust_tile128_local_erbb2_validation/`, and machine-readable outputs to `results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/local_erbb2_expression_validation/`.
+
 ## Notes for the Advisor Discussion
 
-Current top-line result: the expanded 20/20/20 run is the result to present. Earlier bullets describe the precursor 30-slide run and why we expanded it.
+Current top-line result: the strict high-trust 171-slide tile128 analysis is the result to present. It uses 53 HER2-positive, 57 HER2-low, and 61 HER2-zero TCGA-BRCA diagnostic H&E slides after HER2 label, slide-integrity, OpenSlide, and female-patient primary-tumor filtering. The female-patient filter follows the relevant TCGA sample-selection principle from Guardia et al., Genome Research 2025, PMID 40664477; the remaining H&E file and slide QC is project-specific. Earlier bullets describe the precursor 30-slide and expanded 60-slide runs and why we scaled further.
+
+Larger cohort status: a laptop-realistic 61/61/61 clinical HER2 cohort is downloaded locally, with 183 TCGA-BRCA diagnostic H&E slides total. This is the largest balanced cohort available from the current labels because HER2-zero has 61 candidate cases. After label, slide-integrity, OpenSlide, and female-patient QC, 171 strict high-trust slides are used as the current primary analysis set. The raw GigaTIME inference output contains the previous 174-slide set, and the current summaries filter that output to the 171 trustworthy slides.
 
 - HER2 is represented here by `ERBB2` RNA expression from TCGA-BRCA STAR-count files.
 - GigaTIME outputs virtual mIF maps for 23 channels, including immune markers such as `CD3`, `CD8`, `CD4`, `CD20`, `CD68`, `PD-1`, and `PD-L1`.
@@ -321,4 +474,16 @@ Current top-line result: the expanded 20/20/20 run is the result to present. Ear
 - The expanded 20/20/20 run processed 60 slides and strengthened the HER2-low versus HER2-zero signal. Several all-tissue or QC-cellular pairwise differences now pass within-view BH correction for `CD3`, `CD4`, `CD11c`, `CD68`, and QC-cellular `PD-L1`.
 - In the expanded run, the best HER2-low versus HER2-zero GigaTIME/H&E classifier remained around balanced accuracy 0.800 and macro AUC 0.820. HER2-positive classification from GigaTIME/H&E remained weak.
 - RNA marker and RNA program validation remain weak in the expanded run, so the strongest current claim is still hypothesis-generating image-derived HER2-state association, not clinical diagnosis.
-- The sharper paper angle is to ask whether image-derived features predict or associate with HER2-related biological states, such as ERBB2 isoform/transcript context, signaling, or targetability. We should not claim that image AI detects HER2 isoforms without transcript-level or protein-level validation.
+- The strict high-trust 171-slide analysis uses only slides passing HER2 label, female-patient, slide-integrity, and readability checks. HER2-low remained lower than HER2-zero for multiple virtual immune/myeloid/checkpoint/tissue-context channels, including `CD68`, `PD-L1`, `CD11c`, `PD-1`, `CD4`, `CD3`, and `CK`, with all-sampled-tissue BH q values around 0.0016-0.0020 for the HER2-low versus HER2-zero pairwise tests.
+- In the high-trust run, the best HER2-low versus HER2-zero GigaTIME/H&E classifier reached balanced accuracy 0.727 and macro AUC 0.787. HER2-positive classification remained weak, so this supports a HER2-low/HER2-zero tissue-context association rather than a diagnostic HER2 model.
+- ER/PR-adjusted sensitivity checks support the same direction: in all sampled tissue, 7 of 8 tested key channels remain significant after ER/PR adjustment. The HER2-low versus HER2-zero signal is also visible across the main IHC/ISH detail subgroups.
+- Parameter robustness supports the same interpretation: among 56 overlapping slides between the expanded 256-tile run and strict high-trust 128-tile analysis, all 8 tested key channels keep the same HER2-low versus HER2-zero direction and 7 of 8 keep HER2-low lower than HER2-zero.
+- Tumor-rich proxy sensitivity is nuanced: fixed-count CK-rich tile views weaken individual low-versus-zero channel tests, but the multichannel low-versus-zero classifier remains around 0.708-0.761 balanced accuracy across the virtual tumor-rich proxy views. This keeps the signal worth pursuing, but it still needs real tumor-rich/pathologist validation.
+- Classifier permutation sanity checks support that the low-versus-zero classifiers are not just fitting random labels: all selected views beat shuffled-label null distributions with empirical p = 0.0099 and BH q = 0.0099. This is still post-hoc exploratory evidence, not clinical validation.
+- Nested classifier model-selection checks reduce feature-set selection bias: when the feature set is selected inside each training fold, low-vs-zero balanced accuracy remains about 0.672-0.721 across proxy views and beats nested shuffled-label null tests. This is stronger internal classifier evidence, but still not external validation.
+- Clinical/source-site covariate sensitivity adds a major caveat: slide-size-only and source-site-only baselines classify HER2-low versus HER2-zero better than GigaTIME features. The follow-up matched sensitivity keeps modest GigaTIME performance in source-site/slide-size matched subsets, but source-site/slide-size baselines remain competitive or stronger and paired channel tests are not FDR-significant. This means the current TCGA classifier signal is still not safe to present as independent HER2 biology.
+- Source-site held-out validation strengthens that caution: in the top 8 CK proxy view, GigaTIME mean channels drop from 0.745 balanced accuracy under repeated stratified CV to 0.669 when entire TCGA source sites are held out, while slide-size covariates remain about 0.882 balanced accuracy. The classifier signal is therefore not source-independent HER2 biology yet.
+- Within-source-site sensitivity adds a smaller stress test: only four TCGA source sites contain both HER2-low and HER2-zero cases, with 12 low and 39 zero cases total. Site-fixed channel tests keep 7 channel/view effects at BH q < 0.05, and all-channel GigaTIME classifiers retain some above-chance mixed-site performance, but the subset is too small and imbalanced to rescue the current classifier as source-independent biology.
+- Expanded local ERBB2 validation adds a useful RNA sanity check: ERBB2 gene expression strongly validates broad HER2-positive status, with ERBB2-only AUC 0.905 for HER2-positive versus non-positive, but weakly separates HER2-low from HER2-zero, with AUC 0.605 and pairwise p/q 0.262/0.262. The low/zero GigaTIME signal is therefore not simply a strong gene-level ERBB2 expression split.
+- HER2 isoform feasibility audit adds a second guardrail: the current local RNA files are GDC STAR augmented gene-count TSVs. They support ERBB2 gene expression and RNA-program context, but not direct HER2 isoform quantification, SUPPA2 PSI, or rMATS junction confirmation. Isoform-state analysis requires sample-level isoform labels from the Guardia/Galante workflow or appropriate RNA-seq read/junction data.
+- The sharper paper angle is inspired by Guardia et al.'s HER2 isoform/ADC-resistance biology: ask whether image-derived features predict or associate with HER2-related biological states, such as ERBB2 isoform/transcript context, signaling, or targetability. We should not claim that image AI detects HER2 isoforms without transcript-level or protein-level validation.

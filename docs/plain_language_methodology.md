@@ -1,27 +1,27 @@
-# Plain-Language Methodology: TCGA-BRCA GigaTIME HER2 Pilot
+# Plain-Language Methodology: BRCA HER2 Pathology AI
 
-Status: Current plain-language explanation, updated through the expanded 60-slide clinical HER2 run.
+Status: Current plain-language explanation, updated through the strict high-trust 171-slide clinical HER2 analysis, tumor-rich proxy sensitivity check, and matched HER2-low/HER2-zero sensitivity check.
 
 This document explains what has been done in this project so far for a reader who does not have a genetics, pathology, or computational biology background.
 
-The short version is: this project takes public breast cancer microscope images, runs an existing artificial intelligence model called GigaTIME on small pieces of those images, and compares the model's predicted immune-marker patterns across clinically defined HER2 groups.
+The short version is: this project takes public breast cancer microscope images, uses computational pathology methods to extract image-derived signals, and compares those signals across clinically defined HER2 groups. The first major image model used here is an existing artificial intelligence model called GigaTIME, which predicts virtual immune-marker patterns from small pieces of H&E slides.
 
-This is an early research pilot. It is not a clinical test, not a diagnostic tool, and not a new AI model.
+This is an early research project. It is not a clinical test, not a diagnostic tool, and not a validated HER2 prediction system.
 
 ## 1. The Research Question
 
 The current working question is:
 
-Can the released GigaTIME model generate interpretable immune-environment features from public TCGA breast cancer H&E pathology slides, and do those predicted features look different between HER2-positive, HER2-low, and HER2-zero tumors?
+Can computational pathology features from public TCGA breast cancer H&E pathology slides, starting with GigaTIME virtual mIF predictions, generate interpretable immune-environment signals that look different between HER2-positive, HER2-low, and HER2-zero tumors?
 
 In plainer terms:
 
 - We have breast cancer tissue images.
 - We have clinical HER2 information from TCGA clinical records.
-- We use an existing AI model to estimate immune and tumor marker patterns from the tissue images.
+- We use image-AI methods, currently centered on GigaTIME, to estimate immune and tumor marker patterns from the tissue images.
 - We ask whether those image-derived marker patterns differ across HER2-positive, HER2-low, and HER2-zero breast cancers.
 
-This is a replication/adaptation pilot. The project does not train a new model. It applies a previously released model to a breast cancer research question.
+This began as a replication/adaptation pilot using a previously released model. It now also includes exploratory classifier analyses, but those classifiers are research tools, not clinical models.
 
 ## 2. Biological Background Without Assuming Genetics Knowledge
 
@@ -72,7 +72,7 @@ So the workflow cuts each slide into many small image patches called tiles. The 
 
 Not every tile is useful. Some areas are blank background or have little tissue. The script estimates the tissue fraction of each tile and keeps tiles that pass a minimum tissue threshold.
 
-For the first clinical HER2 pilot, the workflow processed 64 random tissue tiles per slide. The same 30 slides were then rerun with up to 256 random tissue tiles per slide to check whether the result was stable when more of each slide was sampled.
+For the first clinical HER2 pilot, the workflow processed 64 random tissue tiles per slide. The same 30 slides were then rerun with up to 256 random tissue tiles per slide to check whether the result was stable when more of each slide was sampled. The current larger strict high-trust analysis uses 128 sampled tissue tiles per slide across 171 primary-analysis slides.
 
 ## 4. What is GigaTIME?
 
@@ -179,7 +179,7 @@ The resulting label table found:
 | HER2-zero | 61 |
 | HER2-unknown | 455 |
 
-### Step 4: Select a balanced clinical HER2 pilot cohort
+### Step 4: Select balanced clinical HER2 cohorts
 
 The cohort selection script is:
 
@@ -205,6 +205,51 @@ data/tcga_brca/clinical_her2_cohort_slides_files.csv
 data/tcga_brca/clinical_her2_cohort_slide_manifest.tsv
 data/tcga_brca/clinical_her2_cohort_summary.json
 docs/clinical_her2_cohort_selection.md
+```
+
+The project later expanded from this first 30-slide pilot to a 60-slide 20/20/20 cohort, and then to a laptop-realistic 183-slide downloaded cohort: 61 HER2-positive, 61 HER2-low, and 61 HER2-zero slides. HER2-zero is the limiting group because the TCGA-BRCA label table contains only 61 usable HER2-zero clinical rows under the current rules.
+
+### Step 4b: Clean the larger cohort before trusting it
+
+The larger 183-slide cohort was checked for HER2 label trust and slide-file integrity.
+
+The cleanup script is:
+
+```bash
+scripts/build_tcga_her2_trustworthy_slide_list.py
+```
+
+It checks whether each selected slide has:
+
+- a known clinical HER2 group;
+- a direct HER2 label rule;
+- no flagged IHC/ISH discordance;
+- primary-tumor diagnostic SVS metadata;
+- a local slide file;
+- a file size that matches GDC metadata;
+- an SVS file that OpenSlide can read.
+
+The result was:
+
+| Trust category | Slides |
+|---|---:|
+| High label+slide trust | 171 |
+| Review before primary analysis | 9 |
+| Exclude for strict primary analysis | 3 |
+
+The high-trust primary analysis therefore used:
+
+| Clinical HER2 group | High-trust slides |
+|---|---:|
+| HER2-positive | 53 |
+| HER2-low | 57 |
+| HER2-zero | 61 |
+
+The machine-readable trustworthy-slide lists are:
+
+```text
+docs/assets/clinical_her2_trustworthy_slide_list/trustworthy_slides.csv
+docs/assets/clinical_her2_trustworthy_slide_list/high_trust_slides.csv
 ```
 
 ### Step 5: Download the selected slides
@@ -250,22 +295,42 @@ For each slide, the script:
 9. Summarizes each tile into marker scores.
 10. Aggregates tile scores into one row per slide.
 
-Current clinical HER2 run:
+Current strict high-trust clinical HER2 analysis:
 
-- Slides processed: 30.
-- Cases processed: 30.
-- Groups processed: 10 HER2-positive, 10 HER2-low, 10 HER2-zero.
-- Initial tiles per slide: 64 random tissue tiles.
-- Robustness tiles per slide: up to 256 random tissue tiles in a second run.
-- Total tile predictions: about 1,920.
+- Slides in primary analysis: 171.
+- Cases in primary analysis: 171.
+- Groups analyzed: 53 HER2-positive, 57 HER2-low, 61 HER2-zero.
+- Tiles per slide: 128 sampled tissue tiles.
+- Total primary-analysis tile predictions: 21,888.
 - Device used: Apple MPS in the current local run.
+
+The raw GigaTIME output folder still contains the earlier 174-slide inference run. The current statistical summaries filter those existing predictions to the 171 strict trustworthy slides after excluding three male HER2-positive cases. That matches the relevant female-patient TCGA sample-selection principle used by Guardia et al.; our HER2 label, file-integrity, OpenSlide, and tile-quality checks are additional project-specific H&E safeguards.
+
+We also ran a simple "does this disappear if the labels are shuffled?" check for the HER2-low versus HER2-zero classifiers. The real labels performed clearly better than shuffled labels. That means the classifier result is not obviously random, but it still does not make the model a clinical diagnostic test and does not prove HER2 isoform biology.
+
+Then we ran a stricter version where the computer had to choose which image features to use using only the training data, before testing on held-out cases. The result still stayed above the shuffled-label comparison. This makes the classifier result more trustworthy as a research signal, but it still needs outside validation and pathologist-reviewed tumor regions.
+
+The newest and most important caution is that non-image information can also separate HER2-low from HER2-zero in this TCGA cohort. The HER2-zero slides are often much larger and come from different TCGA source sites than the HER2-low slides. A model using only slide size or source-site information performs better than the GigaTIME image-feature model. This means the current result may be partly caused by how TCGA slides were collected or selected, not only by tumor biology.
+
+We then compared more similar HER2-low and HER2-zero slides by matching them on source site or slide size. This reduced some obvious imbalance, but it did not fully solve the problem. GigaTIME image features still performed modestly above chance, but slide-size and source-site information remained competitive or stronger, and individual matched marker tests were not statistically convincing after multiple-testing correction. In plain terms: the signal is interesting, but TCGA alone is not clean enough to prove it is true HER2 biology.
+
+We also tested whether the classifier works when an entire TCGA source site is left out during training. This is like asking whether the pattern travels to a different hospital/scanner/source setting. GigaTIME performance dropped in that harder test. In one important view, the GigaTIME classifier dropped from about 74.5% balanced accuracy to about 66.9%, while slide-size information alone still reached about 88.2%. This is a strong warning that the current classifier may still be learning technical differences between slides, not only tumor biology.
+
+Then we ran an even more local check: only compare HER2-low and HER2-zero cases inside TCGA source sites that contain both groups. This is closer to comparing patients from the same source setting. The problem is that only four source sites qualify, leaving only 12 HER2-low and 39 HER2-zero cases. Some GigaTIME signal remains, especially when using all mean channels, but the smaller key-marker classifier weakens. In plain terms: this keeps the idea alive, but it does not remove the worry that TCGA site differences are influencing the result.
+
+We also rechecked the available RNA files for the HER2 gene itself, `ERBB2`. This was a sanity check, not an isoform test. The result was helpful: ERBB2 RNA was very good at separating HER2-positive tumors from the other tumors, which supports that the broad HER2-positive labels make sense. But ERBB2 RNA was weak at separating HER2-low from HER2-zero: the ERBB2-only AUC was about 0.605. In simple terms, the HER2-low versus HER2-zero image signal is not just because HER2-low has dramatically more ERBB2 RNA. That makes the GigaTIME signal more interesting, but it still does not prove the signal is true HER2 biology because source-site, slide-size, and tissue-composition caveats remain.
+
+Earlier historical runs processed 30 slides at 64 and 256 tiles per slide, then 60 slides at up to 256 tiles per slide.
 
 Main outputs:
 
 ```text
-results/gigatime_tcga_brca_clinical_her2/slide_scores.csv
-results/gigatime_tcga_brca_clinical_her2/tile_scores.csv
-results/gigatime_tcga_brca_clinical_her2/heatmaps/
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/slide_scores.csv
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/tile_scores.csv
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/clinical_summary/
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/gigatime_cleanup/
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/cleaned_classifier_comparison/
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/matched_low_zero_sensitivity/
 ```
 
 ### Step 7: Summarize the GigaTIME predictions by clinical HER2 group
@@ -285,16 +350,67 @@ It combines:
 It writes:
 
 ```text
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/joined_slide_clinical_her2_gigatime.csv
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_channel_summary.csv
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_pairwise_tests.csv
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_summary.md
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_channel_boxplots.png
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/clinical_her2_group_mean_heatmap.png
-results/gigatime_tcga_brca_clinical_her2/clinical_summary/erbb2_tpm_by_clinical_her2_group.png
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/clinical_summary/joined_slide_clinical_her2_gigatime.csv
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/clinical_summary/clinical_her2_channel_summary.csv
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/clinical_summary/clinical_her2_pairwise_tests.csv
+results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/clinical_summary/clinical_her2_summary.md
 ```
 
-## 7. What the Current Full-Pilot Results Show
+## 7. What the Current Results Show
+
+The current main analysis is the strict high-trust 171-slide analysis:
+
+- 53 HER2-positive slides.
+- 57 HER2-low slides.
+- 61 HER2-zero slides.
+- 21,888 primary-analysis GigaTIME tile predictions.
+
+The strongest result is HER2-low versus HER2-zero. In the all-sampled-tissue view, HER2-low was lower than HER2-zero for multiple GigaTIME-predicted immune, myeloid, checkpoint, and tissue-context channels:
+
+| Channel | HER2-low minus HER2-zero | Mann-Whitney p | BH q |
+|---|---:|---:|---:|
+| CD68 | -0.00537 | 0.000371 | 0.002227 |
+| CK | -0.06377 | 0.000129 | 0.002227 |
+| PD-L1 | -0.01301 | 0.000302 | 0.002227 |
+| PD-1 | -0.03948 | 0.000225 | 0.002227 |
+| CD11c | -0.00325 | 0.000272 | 0.002227 |
+| CD4 | -0.02379 | 0.000615 | 0.002634 |
+| CD3 | -0.02433 | 0.000778 | 0.002918 |
+
+Plain-language interpretation:
+
+> In the larger high-trust TCGA-BRCA run, HER2-low tumors had lower GigaTIME-predicted immune/myeloid/checkpoint and CK-associated image signals than HER2-zero tumors. This is a stronger and more reproducible research signal than the first pilot, but it is still not a clinical diagnostic test.
+
+The tile-cleanup analysis asked whether this pattern was only caused by bad tiles. The signal survived cellular-tissue QC and partly survived CK enrichment. It became weaker under the strictest CK top-25% filter, which suggests the pattern may involve broader tissue microenvironment context rather than only epithelial tumor-cell signal.
+
+The cleaned classifier comparison found:
+
+- HER2-low versus HER2-zero: best balanced accuracy 0.727, macro AUC 0.787.
+- HER2-positive versus HER2-negative: weak.
+- Three-class HER2-positive versus HER2-low versus HER2-zero: weak to moderate.
+
+So the strongest current claim is an image-derived HER2-low versus HER2-zero association. The project should not claim reliable HER2 diagnosis yet.
+
+The sensitivity analysis then asked whether this association was only caused by ER/PR status or by one HER2 label subgroup. The answer was reassuring but still cautious:
+
+- In all sampled tissue, 7 of 8 tested key GigaTIME channels stayed statistically significant after ER/PR adjustment.
+- The pattern was visible in HER2-low IHC `1+` cases and HER2-low IHC `2+`/ISH-negative cases.
+- The pattern was visible against both HER2-zero IHC `0`/ISH-negative and HER2-zero IHC `0`/ISH-not-evaluated cases.
+- The strictest CK-enriched view still became weaker, so the result likely involves broader tissue context, not only tumor epithelial cells.
+
+A parameter/settings robustness check then compared the earlier 60-slide run that used 256 tiles per slide against the current strict high-trust analysis that used 128 tiles per slide. There were 56 overlapping slides. The same slide-level GigaTIME channel scores were very similar across runs, and all 8 tested key channels kept the same HER2-low versus HER2-zero direction. This makes it less likely that the main pattern is only a random tile-sampling artifact.
+
+See:
+
+```text
+docs/clinical_her2_high_trust_tile128_results.md
+docs/clinical_her2_high_trust_tile128_gigatime_data_cleanup.md
+docs/clinical_her2_high_trust_tile128_cleaned_classifier_comparison.md
+docs/clinical_her2_high_trust_tile128_erpr_subgroup_sensitivity.md
+docs/clinical_her2_high_trust_tile128_vs_expanded20_tile256_agreement.md
+```
+
+### Historical 30-slide pilot
 
 The full clinical HER2 pilot includes 30 joined slides:
 
@@ -494,9 +610,9 @@ These images are still virtual predictions, not real mIF measurements.
 
 The current project has not yet:
 
-- Processed a large external validation cohort beyond the local 60-slide TCGA-BRCA expanded run.
+- Processed a large external validation cohort beyond the local TCGA-BRCA runs.
 - Used more exhaustive whole-slide sampling.
-- Performed formal tissue quality control on every sampled tile.
+- Performed pathologist-confirmed tumor-region review on every sampled tile.
 - Validated GigaTIME predictions against real multiplex immunofluorescence staining in these TCGA slides.
 - Trained or fine-tuned a new model.
 - Produced a clinically deployable classifier.
@@ -511,8 +627,8 @@ This pilot is useful because it proves several practical pieces:
 
 - TCGA-BRCA H&E slides can be queried and downloaded through GDC.
 - TCGA-BRCA clinical HER2 IHC/ISH fields can be used to create HER2-positive, HER2-low, and HER2-zero groups.
-- A balanced 10/10/10 clinical HER2 pilot cohort can be selected reproducibly.
-- A balanced 20/20/20 expanded clinical HER2 run can be selected, downloaded, processed, and analyzed reproducibly.
+- Balanced 10/10/10 and 20/20/20 clinical HER2 cohorts can be selected reproducibly.
+- A larger 61/61/61 downloaded cohort can be cleaned into a 171-slide strict high-trust primary analysis set.
 - The released GigaTIME model can be run on TCGA-BRCA pathology tiles.
 - The GigaTIME outputs can be aggregated into slide-level marker features.
 - Those marker features can be compared across clinical HER2 groups.
@@ -526,16 +642,28 @@ The safest interpretation is:
 
 This is an exploratory feasibility run showing that an existing H&E-to-virtual-mIF model can be applied to TCGA-BRCA breast cancer slides and connected to clinical HER2 labels.
 
-The current expanded 60-slide result is still too small for strong biological conclusions, but it is stronger than the first 30-slide pilot. It supports a specific hypothesis: HER2-low and HER2-zero tumors may differ in image-derived tissue-context and immune/checkpoint patterns.
+The current strict high-trust 171-slide result supports a specific hypothesis: HER2-low and HER2-zero tumors may differ in image-derived tissue-context and immune/checkpoint patterns.
 
 RNA-seq validation still did not strongly support that signal. GigaTIME virtual channel predictions did not show strong positive correlations with matched RNA marker signatures, and broader RNA programs did not confirm the virtual immune/checkpoint pattern. This does not automatically invalidate the model, but it means the project should be careful and should not claim that the virtual mIF signal has been validated.
 
 The first visual QC check looked at the H&E tiles driving high virtual `CD68`, `PD-L1`, and `CD11c` predictions. Those tiles contained real cellular tissue rather than obvious blank background. That supports continuing the analysis, but it still does not prove that the virtual markers are biologically correct.
 
-The 256-tile rerun and expanded 20/20/20 run suggest the HER2-low versus HER2-zero pattern remains when more tissue tiles and more cases are included. The next scientific step is to test whether the pattern becomes more trustworthy when:
+The newest tumor-rich proxy check asked a more specific question: if we keep only virtual CK-rich, cellular, epithelial-like tiles, does the HER2-low versus HER2-zero pattern disappear? The answer is mixed. Individual marker differences become weaker in the strictest fixed-count CK-rich tile views, which keeps the tissue-composition warning alive. But a multichannel HER2-low versus HER2-zero classifier still performs above chance, with balanced accuracy around 0.708 to 0.761 across virtual tumor-rich proxy views.
+
+Plain-language interpretation:
+
+> There may still be a useful image pattern in the CK-rich/tumor-like regions, but we have not proven that yet because these are virtual GigaTIME filters, not pathologist-confirmed tumor regions.
+
+The newest matched-source/slide-size check asks whether the HER2-low versus HER2-zero signal remains when the slides being compared are more similar in obvious technical ways. The result is cautious: GigaTIME still shows a modest signal, but non-image site/slide-size baselines remain strong and individual matched marker differences are not FDR-significant. This means the project should now move toward external or site-balanced validation rather than making strong claims from TCGA alone.
+
+The source-site holdout check strengthens that caution. When entire TCGA source sites are held out, GigaTIME performance drops, but slide-size information remains very predictive. This means the current classifier is not yet robust enough to be described as source-independent HER2 biology.
+
+We also checked whether the local RNA files can directly test the HER2 isoform idea from the Guardia et al. paper. They cannot yet. The files we have are gene-level STAR count/TPM files. They can tell us about total ERBB2 RNA expression and broad RNA programs, but they do not tell us which HER2 transcript isoforms are present. For that, we would need transcript-level isoform labels or RNA-seq read/junction data.
+
+The 256-tile rerun, expanded 20/20/20 run, and strict high-trust 171-slide analysis suggest the HER2-low versus HER2-zero pattern remains when more tissue tiles and more cases are included. The next scientific step is to test whether the pattern becomes more trustworthy when:
 
 - Even more tiles per slide are sampled or more complete whole-slide coverage is used.
-- More cases are included if reliable HER2-zero cases are available.
+- More cases are included from a source-balanced or external dataset if reliable HER2-zero cases are available.
 - A human reviews representative H&E tiles and virtual mIF composites for plausibility.
 - Richer validation layers are added, such as tumor purity adjustment, immune deconvolution, published immune subtype annotations, or an external dataset with real mIF.
 - Classifier inputs are improved by focusing on tumor-rich tiles instead of all tissue tiles.
@@ -548,9 +676,12 @@ The workflow is organized around these scripts:
 scripts/gdc_query_tcga_brca.py
 scripts/build_tcga_brca_clinical_her2_labels.py
 scripts/select_clinical_her2_cohort.py
+scripts/build_tcga_her2_trustworthy_slide_list.py
 scripts/download_clinical_her2_cohort_slides.py
 scripts/run_gigatime_tcga_brca.py
 scripts/summarize_clinical_her2_gigatime.py
+scripts/cleanup_gigatime_tile_features.py
+scripts/train_her2_cleaned_classifier_comparison.py
 scripts/render_he_slide_images.py
 scripts/render_clinical_her2_visual_qc.py
 scripts/render_virtual_mif_channel_images.py
@@ -565,11 +696,13 @@ Query GDC files
   -> build clinical HER2 labels from IHC/ISH fields
   -> select balanced HER2-positive / HER2-low / HER2-zero cases
   -> download selected H&E slides
+  -> clean labels and slide files into a high-trust primary cohort
   -> run GigaTIME on slide tiles
   -> aggregate tile predictions to slide scores
   -> join slide scores to clinical HER2 groups
   -> summarize and visualize group differences
-  -> use visual QC and RNA validation as next checks
+  -> run tile-cleanup sensitivity analyses and baseline classifiers
+  -> use visual QC, RNA validation, and external validation as next checks
 ```
 
 ## 14. Practical Notes for a New Reader
@@ -577,11 +710,11 @@ Query GDC files
 If you are reading the project for the first time, start with:
 
 1. `README.md` for commands and file locations.
-2. `docs/clinical_her2_cohort_selection.md` for the selected 30-case cohort.
-3. `docs/clinical_her2_gigatime_run.md` for the current full clinical HER2 result.
-4. `docs/clinical_her2_tile_sampling_robustness.md` for the 256-tile robustness check.
-5. `docs/clinical_her2_rna_program_validation.md` for the broader RNA validation check.
-6. `docs/clinical_her2_classifier_baseline.md` for the first classifier result.
+2. `docs/clinical_her2_high_trust_tile128_results.md` for the current main result.
+3. `docs/clinical_her2_trustworthy_slide_list.md` for the trustworthy slide list.
+4. `docs/tcga_her2_label_quality_assessment.md` for label assumptions and caveats.
+5. `docs/clinical_her2_high_trust_tile128_gigatime_data_cleanup.md` for tile-cleanup sensitivity analyses.
+6. `docs/clinical_her2_high_trust_tile128_cleaned_classifier_comparison.md` for the current classifier comparison.
 7. This document for the conceptual explanation.
 8. `docs/advisor_brief.md` for the short advisor-facing summary.
 

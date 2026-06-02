@@ -1,6 +1,6 @@
 # Cleaned GigaTIME HER2 Classifier Comparison
 
-Status: Current expanded 60-slide cleaned classifier report. Use this with `docs/clinical_her2_expanded20_results.md` for the latest classifier interpretation.
+Status: Historical expanded 60-slide cleaned classifier report. For the current larger classifier interpretation, use `docs/clinical_her2_high_trust_tile128_cleaned_classifier_comparison.md` with `docs/clinical_her2_high_trust_tile128_results.md`.
 
 This analysis reruns the slide-level HER2 classifier after cleaning the GigaTIME tile inputs. It compares all sampled tissue against cellular and virtual CK-enriched feature views.
 

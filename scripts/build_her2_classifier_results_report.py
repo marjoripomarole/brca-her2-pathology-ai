@@ -206,7 +206,7 @@ def build_notebook(
             """
 # Clinical HER2 Classifier Results
 
-Classifier-only report for the TCGA-BRCA GigaTIME HER2 pilot.
+Classifier-only report for the BRCA HER2 pathology-AI project.
 
 **Plain-language bottom line:** the first real classifier is working, but it is not clinically reliable yet. The strongest image-derived result is HER2-low versus HER2-zero. HER2-positive classification from GigaTIME/H&E features is weak, and full three-class prediction is still at chance.
             """
@@ -358,7 +358,7 @@ img { display: block; width: 100%; max-width: 980px; height: auto; margin: 14px 
         """
 <div class="hero">
   <h1>Clinical HER2 Classifier Results</h1>
-  <p>Classifier-only summary for the TCGA-BRCA GigaTIME HER2 pilot: model inputs, cross-validated metrics, confusion matrices, ERBB2 RNA reference, and next modeling steps.</p>
+  <p>Classifier-only summary for the BRCA HER2 pathology-AI project: model inputs, cross-validated metrics, confusion matrices, ERBB2 RNA reference, and next modeling steps.</p>
 </div>
 """,
         section(

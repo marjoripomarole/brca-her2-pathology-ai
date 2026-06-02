@@ -1,6 +1,6 @@
 # Clinical HER2 Tile-Sampling Robustness Check
 
-Status: Historical 30-slide robustness report. For the latest expanded 60-slide result, use `docs/clinical_her2_expanded20_results.md`.
+Status: Historical 30-slide robustness report. For the current larger result, use `docs/clinical_her2_high_trust_tile128_results.md`.
 
 This document records the first robustness check after the 64-tile clinical HER2 pilot. The goal was to test whether the HER2-zero versus HER2-low virtual immune/checkpoint signal remained visible when each slide was sampled more densely.
 

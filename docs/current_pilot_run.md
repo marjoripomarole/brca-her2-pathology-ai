@@ -1,6 +1,6 @@
 # Current Pilot Run
 
-Status: Current project status summary. For the cleanest latest-results presentation, use `docs/clinical_her2_expanded20_results.md`; for the history, use `docs/paper_proposal_process_log.md`.
+Status: Current project status summary. For the cleanest latest-results presentation, use `docs/clinical_her2_high_trust_tile128_results.md`; for the history, use `docs/paper_proposal_process_log.md`.
 
 ## Run Status
 
@@ -35,6 +35,164 @@ The expanded run strengthened the HER2-low versus HER2-zero finding. Several all
 The three-group interpretation became more nuanced: HER2-low is often the lowest virtual immune/checkpoint group, while HER2-positive becomes highest for several broader virtual immune programs. RNA validation remains weak, so this is still hypothesis-generating.
 
 See `docs/clinical_her2_expanded20_results.md`.
+
+## Laptop-Realistic 61/61/61 Cohort Ready For Next Run
+
+A larger balanced cohort has now been prepared and downloaded for scaling beyond the 60-slide analysis:
+
+- HER2-positive cases selected: 61
+- HER2-low cases selected: 61
+- HER2-zero cases selected: 61
+- Slides selected: 183
+- Slides downloaded locally: 183 of 183
+- Slide storage footprint: about 31 GB under `data/tcga_brca/slides/`
+- Remaining local disk after download: about 144 GiB free
+
+This is the largest balanced clinical HER2 cohort available from the current label table because HER2-zero is the limiting group with 61 candidate cases. The selection used one diagnostic primary-tumor H&E whole-slide image per case, prioritized direct clinical labels, and favored already-local or smaller slide files for laptop feasibility.
+
+This larger cohort became the basis for the current strict high-trust 171-slide analysis. The expanded 20/20/20 run is now historical and mainly useful as a 256-tile comparison point.
+
+HER2 label and slide-metadata QC has also been run on this 183-slide cohort. After checking Guardia et al., Genome Research 2025, PMID 40664477, "Alternative splicing generates HER2 isoform diversity underlying antibody-drug conjugate resistance in breast cancer," we kept the relevant female-patient TCGA sample-selection principle and added our own H&E slide-specific checks. The current trustworthy-slide list finds 171 strict high label+slide trust slides, 9 slides needing review before primary analysis, and 3 male-patient slides excluded from primary analysis. See `docs/clinical_her2_trustworthy_slide_list.md`.
+
+## Strict High-Trust 171-Slide Tile128 GigaTIME Analysis
+
+The high-trust cohort was processed with a laptop-safe GigaTIME run, then filtered to the strict 171-slide primary analysis set:
+
+- HER2-positive strict high-trust slides analyzed: 53
+- HER2-low high-trust slides processed: 57
+- HER2-zero high-trust slides processed: 61
+- Total strict primary-analysis slides: 171
+- Tile sampling: 128 random tissue tiles per slide
+- Total primary-analysis tile predictions: 21,888
+- Device: Apple MPS
+- Heatmaps: disabled for runtime/storage practicality
+- Runner change: `scripts/run_gigatime_tcga_brca.py` now supports `--resume`
+
+This is now the largest and cleanest analyzed result in the project. The main finding is again HER2-low versus HER2-zero separation: HER2-low is lower than HER2-zero for `CD68`, `PD-L1`, `CD11c`, `PD-1`, `CD4`, `CD3`, and `CK`, with BH-corrected pairwise q values around 0.002-0.003 in the all-sampled-tissue view.
+
+The parameter/settings robustness check compared the overlapping slides from the earlier 60-slide 256-tile run with the current strict high-trust 128-tile analysis. There were 56 overlapping slide IDs, including all 20 HER2-low and all 20 HER2-zero expanded-run slides. All 8 tested key channels had the same HER2-low versus HER2-zero direction across runs, and 7 of 8 had HER2-low lower than HER2-zero in both runs.
+
+The classifier result is useful but not diagnostic:
+
+- Best HER2-low versus HER2-zero balanced accuracy: 0.727
+- Best HER2-low versus HER2-zero macro AUC: 0.787
+- QC-cellular view preserved the signal with balanced accuracy 0.719
+- HER2-positive versus HER2-negative classification remained weak, with best balanced accuracy about 0.574
+- Three-class HER2 classification remained weak/moderate, around 0.50-0.52 balanced accuracy
+
+The ER/PR and HER2-detail sensitivity analysis strengthens the main interpretation:
+
+- In all sampled tissue, 7 of 8 tested key channels remain significant after ER/PR adjustment.
+- The signal remains visible across HER2-low IHC `1+`, HER2-low IHC `2+`/ISH-negative, HER2-zero IHC `0`/ISH-negative, and HER2-zero IHC `0`/ISH-not-evaluated subgroups.
+- The strict CK-enriched view still weakens, keeping the interpretation focused on tissue context rather than pure tumor-cell HER2 phenotype.
+
+The case-level driver analysis adds a review layer:
+
+- 118 HER2-low/HER2-zero slides were scored using the significant low-versus-zero virtual channels.
+- 71 slides matched the expected HER2-low/HER2-zero direction in at least 3 of 4 cleanup views.
+- 47 slides showed the opposite profile in at least 2 cleanup views.
+- 37 cases were misclassified by the best low-vs-zero classifier in at least 2 cleanup views.
+- These opposite-profile and classifier-error cases are now the highest-priority manual pathology/QC review list.
+
+The case-driver visual QC adds an important caveat:
+
+- 8 representative case-driver cases were rendered as H&E plus virtual mIF panels.
+- Low-like selected tiles had high tissue fraction but very low virtual CK, CD68, PD-L1, and CD11c.
+- Several low-like tiles looked stromal/collagen-rich rather than clearly tumor-rich.
+- This means the HER2-low versus HER2-zero signal may partly reflect tissue composition unless pathologist review or tumor-rich tile restriction supports it.
+
+The tissue-composition sensitivity analysis strengthens that caveat:
+
+- HER2-low has more low-marker tiles than HER2-zero: 0.349 versus 0.180, BH q = 0.000265.
+- HER2-low has fewer high-marker and absolute CK-high QC tiles than HER2-zero.
+- The case-driver score is strongly correlated with marker/tissue composition.
+- After adjusting for low-marker tile fraction, most HER2-low versus HER2-zero channel effects collapse.
+- Current best interpretation: GigaTIME detects a HER2-low versus HER2-zero tissue-context association, not yet a tumor-cell HER2 biology or diagnostic signal.
+
+The tumor-rich proxy sensitivity analysis adds the next layer:
+
+- Fixed-count virtual CK-rich tile views weaken individual channel-test significance.
+- Top 8 CK tiles per slide has no q<0.05 individual channel differences, but the multichannel low-vs-zero classifier still reaches balanced accuracy 0.727 and macro AUC 0.755.
+- Absolute CK-high QC tiles reach low-vs-zero classifier balanced accuracy 0.761 and macro AUC 0.782, but fewer slides qualify and HER2-zero retains more CK-high tiles than HER2-low.
+- Best interpretation: there may be a multichannel image pattern in CK-rich proxy regions, but this remains GigaTIME-derived and needs real tumor-rich/pathologist validation.
+
+The classifier permutation sanity check asks whether those low-vs-zero classifiers still look good after shuffling labels:
+
+- Observed repeated-CV balanced accuracy across selected views: 0.693-0.729.
+- Shuffled-label null mean balanced accuracy: 0.482-0.488.
+- All tested views beat the shuffled-label null with empirical p = 0.0099 and BH q = 0.0099.
+- Best interpretation: the classifier signal is not obviously random, but this is post-hoc exploratory evidence and still needs tumor-rich/pathologist validation.
+
+The nested model-selection check is stricter:
+
+- The model chooses the best feature set inside each outer training fold.
+- Observed nested balanced accuracy across proxy views: 0.672-0.721.
+- Fully nested shuffled-label null mean balanced accuracy: 0.492-0.514.
+- All tested views beat the nested null with empirical p = 0.0323 and BH q = 0.0323.
+- Best interpretation: the low-vs-zero classifier signal survives a stronger internal validation check, but this still is not external validation or clinical diagnosis.
+
+The clinical/source-site covariate sensitivity check adds the strongest caveat so far:
+
+- HER2-low and HER2-zero are highly imbalanced by TCGA source site and slide size.
+- HER2-low mean slide file size is about 100 MB; HER2-zero mean slide file size is about 279 MB.
+- Source-site group imbalance has chi-square p = 7.97e-10.
+- In the top 8 CK proxy view, slide-size covariates alone reach balanced accuracy 0.879, source-site covariates alone reach 0.878, and source-site plus slide-size reaches 0.897.
+- In the same view, GigaTIME mean channels reach balanced accuracy 0.745.
+- Best interpretation: the current classifier signal is not safe to present as independent HER2 biology. It required source-site/slide-size matched sensitivity, and after that matched check it still needs external validation.
+
+The matched low-versus-zero sensitivity check has now been run:
+
+- Exact source-site matching gives 12 HER2-low/HER2-zero pairs.
+- Slide-size matching gives 14 pairs with log-size caliper 0.25 and 20 pairs with log-size caliper 0.50.
+- In exact source-site pairs, GigaTIME mean channels reach balanced accuracy 0.708 and AUC 0.750 in the top 8 CK proxy view.
+- In the slide-size matched subsets, GigaTIME mean channels remain modestly above chance, with balanced accuracy 0.679 and 0.675.
+- However, source-site and slide-size baselines remain competitive or stronger in the larger matched subsets.
+- Paired channel tests in the matched subsets do not reach BH q < 0.05.
+- Best interpretation: matching keeps the signal worth studying, but it does not make the TCGA result safe as independent HER2 biology. External/site-balanced validation and tumor-rich/pathologist review are still necessary.
+
+The source-site held-out generalization check has now been run:
+
+- In the top 8 CK proxy view, GigaTIME mean channels drop from balanced accuracy 0.745 under repeated stratified cross-validation to 0.669 when entire TCGA source sites are held out.
+- In the same view, slide-size covariates remain strong under leave-source-site-out validation, with balanced accuracy 0.882 and AUC 0.915.
+- GigaTIME mean-channel performance drops under source-site holdout across every tested proxy view.
+- Best interpretation: the low-vs-zero classifier contains some above-chance image signal, but it is not source-independent. Slide-size/acquisition structure remains too strong for independent HER2 biology claims.
+
+The HER2 isoform validation feasibility audit has also been run:
+
+- The current local RNA files are GDC STAR augmented gene-count TSVs, not transcript-level isoform quantification.
+- Local RNA data include 110 STAR gene-count cases, 56 strict high-trust cases with local STAR counts, and 40 HER2-low/HER2-zero high-trust cases with local STAR counts.
+- There are no local BAM, FASTQ, junction-count, isoform, or transcript-level files under `data/tcga_brca`.
+- Best interpretation: current data can support ERBB2 gene-level and RNA-program context, but cannot validate Guardia-style HER2 isoform biology. For that, we need sample-level isoform labels from the paper workflow or appropriate RNA-seq read/junction data.
+
+See `docs/clinical_her2_high_trust_tile128_results.md`.
+
+Key files:
+
+- `data/tcga_brca/clinical_her2_laptop_balanced61_cases.csv`
+- `data/tcga_brca/clinical_her2_laptop_balanced61_slides_files.csv`
+- `data/tcga_brca/clinical_her2_laptop_balanced61_slide_manifest.tsv`
+- `data/tcga_brca/clinical_her2_laptop_balanced61_slide_download_status.json`
+- `docs/clinical_her2_laptop_balanced61_selection.md`
+- `docs/clinical_her2_trustworthy_slide_list.md`
+- `docs/assets/clinical_her2_trustworthy_slide_list/trustworthy_slides.csv`
+- `docs/assets/clinical_her2_trustworthy_slide_list/high_trust_slides.csv`
+- `results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/slide_scores.csv`
+- `results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/tile_scores.csv`
+- `docs/clinical_her2_high_trust_tile128_results.md`
+- `docs/clinical_her2_high_trust_tile128_gigatime_data_cleanup.md`
+- `docs/clinical_her2_high_trust_tile128_cleaned_classifier_comparison.md`
+- `docs/clinical_her2_high_trust_tile128_case_driver_analysis.md`
+- `docs/clinical_her2_high_trust_tile128_case_driver_visual_qc.md`
+- `docs/clinical_her2_high_trust_tile128_tissue_composition_sensitivity.md`
+- `docs/clinical_her2_high_trust_tile128_tumor_proxy_sensitivity.md`
+- `docs/clinical_her2_high_trust_tile128_classifier_permutation_sanity.md`
+- `docs/clinical_her2_high_trust_tile128_nested_classifier_model_selection.md`
+- `docs/clinical_her2_high_trust_tile128_clinical_covariate_sensitivity.md`
+- `docs/clinical_her2_high_trust_tile128_matched_low_zero_sensitivity.md`
+- `docs/clinical_her2_high_trust_tile128_source_site_generalization.md`
+- `docs/her2_isoform_validation_feasibility.md`
+- `docs/clinical_her2_high_trust_tile128_erpr_subgroup_sensitivity.md`
+- `docs/clinical_her2_high_trust_tile128_vs_expanded20_tile256_agreement.md`
 
 ## Main Outputs
 
@@ -193,6 +351,33 @@ The especially interesting hypotheses are:
 The current pilot does not prove any of these. It only suggests that the HER2-low versus HER2-zero boundary may have an image-derived tissue-context signal worth validating. We should say that image AI predicts or associates with HER2 isoform/state hypotheses, not that image AI detects HER2 isoforms.
 
 See `docs/her2_isoform_state_hypothesis.md`.
+
+## Local ERBB2 RNA Update
+
+The latest local ERBB2 validation extracted gene-level ERBB2 TPM from all 110 local STAR count cases. In the strict high-trust overlap, ERBB2 RNA strongly supports broad HER2-positive status but weakly separates HER2-low from HER2-zero:
+
+| Task | N cases | ERBB2-only AUC | Best-threshold balanced accuracy |
+|---|---:|---:|---:|
+| HER2-positive vs non-positive | 56 | 0.905 | 0.831 |
+| HER2-low vs HER2-zero | 40 | 0.605 | 0.625 |
+
+This helps the paper framing: the low/zero GigaTIME signal is not simply a strong gene-level ERBB2 RNA split. It still does not validate HER2 isoforms because these are gene-level STAR count files, not transcript-level isoform or junction files.
+
+See `docs/clinical_her2_high_trust_tile128_local_erbb2_validation.md`.
+
+## Within-Source-Site Update
+
+We also restricted HER2-low versus HER2-zero analysis to TCGA source sites that contain both groups. Only four source sites qualify: A1, A2, A8, and AO. This leaves 51 cases total: 12 HER2-low and 39 HER2-zero.
+
+In this mixed-site subset:
+
+- Site-fixed channel tests keep 7 channel/view effects at BH q < 0.05.
+- In the top 8 CK proxy view, GigaTIME all mean channels reach 0.667 repeated-CV balanced accuracy and 0.628 leave-mixed-source-site-out balanced accuracy.
+- GigaTIME key mean channels are much weaker, around 0.505 repeated-CV and 0.490 leave-site-out balanced accuracy.
+
+Interpretation: some all-channel GigaTIME signal remains inside mixed source sites, but the subset is too small and imbalanced to prove source-independent HER2 biology.
+
+See `docs/clinical_her2_high_trust_tile128_within_source_site_low_zero.md`.
 
 ## Visual QC Check
 
