@@ -44,13 +44,20 @@ The core distinction is important: H&E and virtual mIF predictions can generate 
 
 The current pilot supports a cautious starting point:
 
-- There is a reproducible image-derived signal separating HER2-low and HER2-zero cases, first seen in the 30-slide pilot and strengthened in the expanded 60-slide 20/20/20 run.
-- In the expanded run, several HER2-low versus HER2-zero virtual immune/myeloid/checkpoint channel differences pass within-view BH correction, especially `CD3`, `CD4`, `CD11c`, and `CD68`; `PD-L1` passes in the QC-cellular view.
-- The HER2-low versus HER2-zero classifier remained around balanced accuracy 0.800 in the expanded 40-case binary comparison.
-- The three-group pattern is nuanced: HER2-low often appears lowest, while HER2-positive becomes highest for several broader virtual immune programs.
+- There is a reproducible image-derived signal separating HER2-low and HER2-zero cases, first seen in the 30-slide pilot, strengthened in the expanded 60-slide 20/20/20 run, and carried into the strict high-trust 171-slide analysis.
+- In the strict high-trust run, HER2-low is lower than HER2-zero for several virtual immune/myeloid/checkpoint and CK-associated channels in broad all-sampled-tissue views.
+- The HER2-low versus HER2-zero classifier beats shuffled-label sanity checks, including a stricter nested feature-selection check.
+- The three-group pattern is nuanced: the clearest signal is HER2-low versus HER2-zero, while HER2-positive classification remains weak.
 - HER2-positive versus HER2-negative classification remains weak, so the current pipeline does not reliably predict clinical HER2-positive disease.
+- Expanded local ERBB2 gene-level validation supports broad HER2-positive labels, but weakly separates HER2-low from HER2-zero; ERBB2-only low/zero AUC is 0.605 and pairwise p/q are 0.262/0.262.
+- Clinical/source-site and matched-subset sensitivity checks show major TCGA confounding risk. Source-site and slide-size covariates classify HER2-low versus HER2-zero very well, and matching does not fully remove this concern.
 
-This means the current study is best interpreted as evidence that image-derived tissue context may contain information related to the HER2-low versus HER2-zero boundary. It does not yet show that the images capture HER2 isoforms, and RNA validation remains weak.
+This means the current study is best interpreted as evidence that image-derived tissue context may contain information related to the HER2-low versus HER2-zero boundary. It does not yet show that the images capture HER2 isoforms, and RNA validation remains weak. TCGA alone is not clean enough to claim independent HER2 biology without external/site-balanced validation.
+
+The isoform feasibility audit makes this boundary concrete. The current local RNA files are GDC STAR augmented gene-count TSVs. They contain gene-level counts/TPM and support ERBB2 expression or RNA-program context, but they do not contain transcript-level isoform quantification, BAM/FASTQ reads, or junction-count outputs. Locally, there are 110 STAR gene-count cases, 56 strict high-trust cases with local STAR counts, and 40 HER2-low/HER2-zero high-trust cases with local STAR counts. That is useful for indirect RNA context, not for direct Guardia-style HER2 isoform validation.
+
+See `docs/her2_isoform_validation_feasibility.md`.
+See also `docs/clinical_her2_high_trust_tile128_local_erbb2_validation.md`.
 
 ## What Validation Is Needed
 
