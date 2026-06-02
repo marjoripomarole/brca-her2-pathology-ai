@@ -1,0 +1,81 @@
+{
+  "n_rows": 684,
+  "n_slides_all_tissue": 171,
+  "channels": [
+    "CD68",
+    "PD-L1",
+    "PD-1",
+    "CD11c",
+    "CD4",
+    "CD3",
+    "CK",
+    "Ki67"
+  ],
+  "counts": {
+    "groups": {
+      "HER2-zero": 61,
+      "HER2-low": 57,
+      "HER2-positive": 53
+    },
+    "er_by_group": {
+      "HER2-positive": {
+        "Positive": 43,
+        "Negative": 10
+      },
+      "HER2-low": {
+        "Positive": 45,
+        "Negative": 12
+      },
+      "HER2-zero": {
+        "Positive": 43,
+        "Negative": 18
+      }
+    },
+    "pr_by_group": {
+      "HER2-positive": {
+        "Positive": 30,
+        "Negative": 23
+      },
+      "HER2-low": {
+        "Positive": 41,
+        "Negative": 16
+      },
+      "HER2-zero": {
+        "Positive": 37,
+        "Negative": 24
+      }
+    },
+    "detail_subgroups": {
+      "HER2-zero_IHC0_ISH-not-evaluated": 43,
+      "HER2-positive_IHC3": 30,
+      "HER2-low_IHC1_ISH-not-evaluated": 27,
+      "HER2-low_IHC2_ISH-negative": 22,
+      "HER2-zero_IHC0_ISH-negative": 18,
+      "HER2-positive_IHC2_ISH-positive": 14,
+      "HER2-positive_ISH-positive_IHC-missing": 9,
+      "HER2-low_IHC1_ISH-negative": 8
+    }
+  },
+  "adjusted_q_lt_0_05_by_view": {
+    "all_sampled_tissue": {
+      "unadjusted": 8,
+      "er_pr_adjusted": 7,
+      "er_pr_erbb2_adjusted": 4
+    },
+    "qc_cellular_tissue": {
+      "unadjusted": 7,
+      "er_pr_adjusted": 4,
+      "er_pr_erbb2_adjusted": 3
+    },
+    "ck_enriched_top50": {
+      "unadjusted": 7,
+      "er_pr_adjusted": 4,
+      "er_pr_erbb2_adjusted": 3
+    },
+    "ck_enriched_top25": {
+      "unadjusted": 7,
+      "er_pr_adjusted": 1,
+      "er_pr_erbb2_adjusted": 2
+    }
+  }
+}

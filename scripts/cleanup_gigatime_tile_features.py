@@ -121,7 +121,7 @@ def load_inputs(pd, tile_scores: Path, cohort_path: Path):
         "pr_status",
     ]
     cohort = cohort[[col for col in keep_cols if col in cohort.columns]].drop_duplicates("case_submitter_id")
-    tiles = tiles.merge(cohort, on="case_submitter_id", how="left", validate="many_to_one")
+    tiles = tiles.merge(cohort, on="case_submitter_id", how="inner", validate="many_to_one")
     return tiles, cohort
 
 

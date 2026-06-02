@@ -1,0 +1,16 @@
+{
+  "reference_label": "Expanded 60-slide tile256",
+  "comparison_label": "High-trust tile128",
+  "n_reference_slides": 60,
+  "n_comparison_slides": 171,
+  "n_overlap_slides": 56,
+  "overlap_group_counts": {
+    "HER2-low": 20,
+    "HER2-zero": 20,
+    "HER2-positive": 16
+  },
+  "n_channels": 23,
+  "n_key_channels": 8,
+  "key_channels_same_direction": 8,
+  "key_channels_both_low_lower": 7
+}

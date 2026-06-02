@@ -69,6 +69,11 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--max-slides", type=int, default=0, help="Maximum slides to process. Use 0 for all.")
     parser.add_argument("--save-tile-csv", action="store_true", help="Write one row per tile.")
     parser.add_argument("--heatmap-channels", default="CD3,CD8,PD-L1,CK", help="Comma-separated channels for tile heatmaps.")
+    parser.add_argument(
+        "--resume",
+        action="store_true",
+        help="If output CSVs already exist, keep existing rows and skip slides already present in slide_scores.csv.",
+    )
     return parser.parse_args()
 
 
@@ -232,6 +237,14 @@ def write_csv(path: Path, rows: list[dict[str, object]]) -> None:
         writer.writerows(rows)
 
 
+def read_existing_csv(path: Path) -> list[dict[str, object]]:
+    if not path.exists():
+        return []
+    with path.open("r", newline="", encoding="utf-8") as handle:
+        reader = csv.DictReader(handle)
+        return [dict(row) for row in reader]
+
+
 def save_heatmaps(tile_rows: list[dict[str, float | int | str]], channels: list[str], out_dir: Path, slide_id: str) -> None:
     if not tile_rows:
         return
@@ -327,9 +340,15 @@ def main() -> int:
         raise FileNotFoundError(f"No .svs/.tif/.tiff slides found under {args.slides_dir}")
 
     heatmap_channels = [channel.strip() for channel in args.heatmap_channels.split(",") if channel.strip()]
-    slide_rows: list[dict[str, object]] = []
-    all_tile_rows: list[dict[str, object]] = []
+    slide_scores_path = out_dir / "slide_scores.csv"
+    tile_scores_path = out_dir / "tile_scores.csv"
+    slide_rows: list[dict[str, object]] = read_existing_csv(slide_scores_path) if args.resume else []
+    all_tile_rows: list[dict[str, object]] = read_existing_csv(tile_scores_path) if args.resume and args.save_tile_csv else []
+    processed_slide_ids = {str(row.get("slide_id", "")) for row in slide_rows if row.get("slide_id")}
     for index, slide_path in enumerate(slides, start=1):
+        if args.resume and slide_path.stem in processed_slide_ids:
+            print(f"[{index}/{len(slides)}] Skipping existing {slide_path}", file=sys.stderr)
+            continue
         print(f"[{index}/{len(slides)}] Processing {slide_path}", file=sys.stderr)
         slide_row, tile_rows = run_slide(torch, model, openslide, slide_path, args, device)
         slide_rows.append(slide_row)
@@ -338,11 +357,11 @@ def main() -> int:
             tile_row["case_submitter_id"] = slide_row["case_submitter_id"]
         all_tile_rows.extend(tile_rows)
         save_heatmaps(tile_rows, heatmap_channels, out_dir / "heatmaps", str(slide_row["slide_id"]))
-        write_csv(out_dir / "slide_scores.csv", slide_rows)
+        write_csv(slide_scores_path, slide_rows)
         if args.save_tile_csv:
-            write_csv(out_dir / "tile_scores.csv", all_tile_rows)
+            write_csv(tile_scores_path, all_tile_rows)
 
-    print(f"Done. Wrote {out_dir / 'slide_scores.csv'}", file=sys.stderr)
+    print(f"Done. Wrote {slide_scores_path}", file=sys.stderr)
     return 0
 
 
