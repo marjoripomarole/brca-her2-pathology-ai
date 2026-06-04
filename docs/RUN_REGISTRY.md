@@ -14,9 +14,9 @@ Status: curated run-by-run map. This file is meant to answer "what is current, w
 | high_trust_source_holdout | Current caveat | HER2-low vs HER2-zero subset | Leave-source-site-out validation | `scripts/analyze_source_site_generalization.py` | `clinical_her2_high_trust_tile128_source_site_generalization.md` | GigaTIME performance drops under source-site holdout |
 | high_trust_erbb2_rna | Current validation | Local STAR-count cases | ERBB2 gene-level TPM | `scripts/analyze_local_erbb2_expression_validation.py` | `clinical_her2_high_trust_tile128_local_erbb2_validation.md` | ERBB2 RNA validates broad HER2-positive labels, not low-vs-zero strongly |
 | isoform_feasibility | Current guardrail | Local RNA files | STAR gene-count audit | `scripts/audit_her2_isoform_validation_feasibility.py` | `her2_isoform_validation_feasibility.md` | Current files cannot directly validate isoforms or junctions |
-| hoptimus_h0mini_plan | Planned/model baseline | High-trust slide list | H0-mini / H-Optimus embeddings | `scripts/run_hoptimus_tcga_brca.py` | `hoptimus_embedding_baseline.md` | Next generic H&E embedding baseline |
+| hoptimus_h0mini_plan | Planned/model baseline | High-trust slide list | H0-mini / H-Optimus embeddings | `scripts/run_hoptimus_tcga_brca.py` | `hoptimus_embedding_baseline.md` | Next generic H&E embedding baseline; one H-Optimus-0 TCGA tile smoke now works |
 | histoprism_one_vector | Smoke test | Official HistoPrism sample vector | HistoPrism with precomputed UNI vector | `scripts/run_histoprism_one_vector_smoke.py` | `histoprism_one_vector_smoke.md` | Model loads; true TCGA tile run waits on compatible UNI embeddings |
-| deepspot_one_vector | Smoke test | Synthetic H-Optimus-shaped vector plus TCGA tile context note | DeepSpot lung Visium pretrained checkpoint | `scripts/run_deepspot_one_vector_smoke.py` | `deepspot_one_vector_smoke.md` | Model loads; true TCGA tile run waits on H-Optimus-0 embeddings |
+| deepspot_one_vector | Smoke test | Synthetic vector and one real H-Optimus-0 tile from `TCGA-A7-A26J` | DeepSpot lung Visium pretrained checkpoint | `scripts/run_deepspot_one_vector_smoke.py` | `deepspot_one_vector_smoke.md` | Model loads; real one-tile TCGA smoke succeeds; not yet a biological result |
 
 ## Current Priority
 

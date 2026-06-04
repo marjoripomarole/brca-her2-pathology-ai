@@ -100,7 +100,14 @@ def load_embedding_csv(path: Path) -> tuple[np.ndarray | None, dict]:
     embedding_keys = sorted(key for key in rows[0] if key.startswith("embedding_"))
     if embedding_keys:
         values = np.array([float(rows[0][key]) for key in embedding_keys], dtype=np.float32)
-        return values, {"path": str(path), "status": "loaded", "format": "embedding_columns_first_row", "dimension": int(values.size)}
+        source_row = {key: value for key, value in rows[0].items() if not key.startswith("embedding_")}
+        return values, {
+            "path": str(path),
+            "status": "loaded",
+            "format": "embedding_columns_first_row",
+            "dimension": int(values.size),
+            "source_row": source_row,
+        }
 
     return None, {"path": str(path), "status": "unsupported_format", "columns": list(rows[0])}
 

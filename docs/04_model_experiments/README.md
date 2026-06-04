@@ -7,10 +7,10 @@ This folder tracks model-family experiments beyond the primary GigaTIME analysis
 | Model family | Role | Current status |
 |---|---|---|
 | GigaTIME | Primary virtual mIF/TIME feature generator | Current main result is complete for high-trust 171-slide cohort |
-| H0-mini / H-Optimus-0 | Generic H&E embedding baseline | Planned/partially set up; gated model access and large downloads matter |
+| H0-mini / H-Optimus-0 | Generic H&E embedding baseline | One real TCGA H-Optimus-0 tile embedding succeeded; full baseline still pending |
 | Phikon | Open H&E embedding fallback | One TCGA tile embedding smoke succeeded |
 | HistoPrism | Tile/spot-level virtual expression follow-up | One-vector smoke exists; true TCGA tile run waits on compatible UNI embeddings |
-| DeepSpot | Virtual spatial transcriptomics follow-up | Checkpoint smoke exists; true TCGA tile run waits on H-Optimus-0 embeddings |
+| DeepSpot | Virtual spatial transcriptomics follow-up | Synthetic-vector smoke and real H-Optimus one-tile TCGA smoke succeeded |
 
 ## Reports
 
