@@ -2,7 +2,7 @@
 
 Status: Living history/process log. This is the document that records the sequence of decisions, analyses, and findings over time.
 
-Last updated: 2026-06-02
+Last updated: 2026-06-04
 
 This document keeps a running record of the research process for a future paper or grant proposal. It is written to preserve both the scientific reasoning and the concrete computational steps used in this BRCA HER2 pathology-AI project.
 
@@ -2026,3 +2026,26 @@ Updated key files:
 - `docs/external_validation_candidates.md`
 - `docs/clinical_her2_high_trust_tile128_results.md`, `docs/advisor_brief.md`, `docs/RUN_REGISTRY.md` (spine updates)
 - `results/hoptimus_tcga_brca_high_trust_tile128/`, `results/virchow2_tcga_brca_high_trust_tile128/`
+
+## 2026-06-04: BCNB Clinical Gate Resolved
+
+The BCNB registration/full-clinical-data check resolved the main external-validation uncertainty. The full clinical file is local under ignored `data/bcnb/` and confirms that `HER2 Expression` preserves IHC score 0/1+/2+/3+, while binary `HER2` status encodes the positive/negative status needed to split 2+ cases by ISH status. The derived label table is local at `data/bcnb/bcnb_her2_labels.csv` and is not redistributed.
+
+Derived BCNB clinical HER2 groups:
+
+| Group | Definition | N |
+|---|---|---:|
+| HER2-zero | IHC 0 | 127 |
+| HER2-low | IHC 1+, or 2+/ISH-negative | 654 |
+| HER2-positive | IHC 3+, or 2+/ISH-positive | 277 |
+
+This is a clean external win for the exact question TCGA could not support: BCNB has a single-scanner low/zero cohort of 781 cases total, including 127 HER2-zero cases, more than double TCGA-BRCA's entire HER2-zero ceiling of 61. Histological grade is also available and shows the expected imbalance: among graded low/zero cases, HER2-zero is grade 3 in 42/90 cases (47%) versus 181/577 (31%) for HER2-low. ER and PR differ as well and can be modeled as covariates.
+
+Interpretation: BCNB should become the immediate external-validation path. The project is no longer blocked on clinical granularity; it is blocked on the image-input decision. The next practical work is to obtain the WSIs or inspect the 1.85 GB `paper_patches.zip`, build a patient/slide or patient/patch manifest, and run a one-slide/one-patient smoke before launching a full low-versus-zero embedding analysis with grade/ER/PR controls.
+
+Updated key files:
+
+- `docs/bcnb_exploration.md`
+- `docs/external_validation_candidates.md`
+- `docs/00_start_here.md`
+- `docs/RUN_REGISTRY.md`

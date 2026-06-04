@@ -1,12 +1,14 @@
 # External Validation Candidate Cohorts
 
-Status: working reference for external (non-TCGA) validation of the HER2-low versus HER2-zero image signal. Compiled 2026-06-04 from a web/literature scout. Numbers and access details should be re-verified against the primary sources before committing to any cohort.
+Status: current reference for external (non-TCGA) validation of the HER2-low versus HER2-zero image signal. Compiled 2026-06-04 from a web/literature scout, then updated after BCNB full-clinical access confirmed IHC-score granularity. Numbers and access details outside BCNB should still be re-verified against primary sources before committing to any cohort.
 
 ## Why External Data Is Now The Bottleneck
 
 The HER2-low versus HER2-zero signal in this project has been shown, repeatedly and from multiple angles, to be confounded by TCGA acquisition structure (slide size and source site) rather than tumor-cell HER2 biology. As of 2026-06-04 this is supported by clinical/source-site covariate baselines, matched subsets, leave-source-site-out validation, within-source-site restriction, and two independent generic foundation-model embedding controls (H-Optimus-0 and Virchow2) that reproduce the separation and the same source-site collapse. See `docs/clinical_her2_high_trust_tile128_results.md`.
 
 TCGA-internal evidence is therefore exhausted. Pulling more TCGA-BRCA slides does not help: HER2-zero is capped at 61 cases in all of TCGA-BRCA (already fully used), and more data along a confounded axis tightens confidence intervals around a biased estimate. The only data that can change the conclusion is variation independent of HER2 status, i.e. an external cohort, ideally single-scanner / single-institution so the slide-size/source-site confound is removed by construction.
+
+BCNB now satisfies the first external-cohort gate: full clinical data are local, HER2 IHC 0/1+/2+/3+ is recoverable, histological grade is available, and the cohort is single-scanner. The remaining BCNB gate is practical rather than clinical: obtaining the WSIs or validating whether the provided precomputed patches can support the same embedding-control analysis without unacceptable sampling bias.
 
 ## The Hard Constraint: HER2-Low-vs-Zero Granularity
 
@@ -44,8 +46,8 @@ However, TCGA-BRCA does not provide histologic grade: there is no grade field in
 
 | Cohort | What it is | Single-source? | HER2 granularity | Access |
 |---|---|---|---|---|
+| BCNB (Early Breast Cancer Core-Needle Biopsy) | 1,058 core-biopsy H&E WSI, China, iScan Coreo 200x | Yes - one institution, one scanner | Confirmed IHC 0/1+/2+/3+; derived zero=127, low=654, positive=277; grade/ER/PR/Ki67 available | Free registration, non-commercial; full clinical file local, WSIs/patches pending |
 | ACCCC (A.C. Camargo, Brazil) | 546 H&E WSI / 504 pts, Leica Aperio AT2, 0.25 um/px | Yes — one institution, one scanner | neg / low / high (the exact split) | Private; request from Valieris et al. |
-| BCNB (Early Breast Cancer Core-Needle Biopsy) | 1,058 core-biopsy H&E WSI, China, iScan Coreo 200x | Yes — one institution, one scanner | Clinical HER2 present; IHC-0-vs-1+ separability to confirm | Free, registration, non-commercial |
 | ACROBAT | 4,212 WSI / ~1,153 pts, Swedish routine diagnostics; paired H&E + IHC (ER/PR/HER2/Ki67) consecutive sections | Yes — one source | HER2 as stained IHC slide; score likely needs deriving | Public (grand-challenge, CC) |
 | HEROHE | 509 cases, single scanner (3DHistech Pannoramic 1000, Ipatimup) | Yes — one scanner | Binary positive/negative only | Public |
 | Yale "HER2-TUMOR-ROIS" (TCIA) | H&E + HER2 status + trastuzumab response + tumor ROI annotations | Yes — single institution | HER2-positive focus, not low/zero | Public (TCIA) |
@@ -53,18 +55,19 @@ However, TCGA-BRCA does not provide histologic grade: there is no grade field in
 
 ## Recommended Path
 
-1. Contact the Valieris / ACCCC group. They have the single best-fit cohort (single-institution, single-scanner, with neg/low/high labels) and have hit the same wall. A collaboration or data request is the cleanest possible external test of the confound finding, and this project's leave-site-out / embedding-control method is exactly what their analysis lacked.
-2. Pull BCNB now (free) and check whether its HER2 field encodes IHC score 0 separately from 1+. If yes, it is an immediate single-scanner external low-versus-zero test; if binary, it still gives a clean HER2-positive-vs-negative reproducibility check under controlled acquisition.
-3. Use ACROBAT as the strongest "does anything survive single-scanner" stress test: 4,000+ WSIs from one source, with paired HER2-IHC slides to derive status.
+1. Make BCNB the immediate external validation path. The clinical gate is now solved: BCNB gives a single-scanner low-versus-zero cohort of 654 vs 127 with grade, ER, PR, Ki67, molecular subtype, and nodal status. Next, obtain either the WSIs or a documented patch set, build a patient/slide manifest, and rerun the same generic-embedding control with grade/ER/PR covariate baselines.
+2. Contact the Valieris / ACCCC group in parallel. Their cohort remains the cleanest published analogue (single-institution, single-scanner, with neg/low/high labels) and they have hit the same wall. A collaboration or data request is still valuable, especially if BCNB's core-biopsy design introduces tissue-sampling concerns.
+3. Use ACROBAT as the strongest independent stress test if BCNB succeeds or is limited by WSI logistics: 4,000+ WSIs from one source, with paired HER2-IHC slides to derive status.
 4. Use IMPRESS multiplex IHC (real PD-L1/CD8/CD163) to validate GigaTIME's virtual immune channels against measured immune markers, closing the RNA-validation gap that never closed.
 
-## Open Items To Verify Before Committing
+## Open Items To Verify Before Running
 
-- BCNB: confirm exact HER2 value categories (is IHC score 0 separable from 1+, so HER2-zero is recoverable?).
+- BCNB: obtain the WSIs or inspect `paper_patches.zip` metadata, then confirm patient/slide/patch IDs map cleanly to `Patient ID` and do not encode a train/test split or patch-selection process that would bias a foundation-model embedding analysis.
+- BCNB: decide whether to use full WSIs (strongest, more storage/time) or precomputed patches (faster, but only acceptable if patch sampling is documented and patient-linked).
 - ACROBAT: confirm whether per-case HER2 IHC scores are tabulated in metadata, or only the stained IHC slides are provided (requiring score derivation).
 - ACCCC: confirm data-sharing terms / whether the Valieris group will collaborate or release.
 - Confirm the HER2-null > HER2-low TIL-density direction in the full text of PMID 41316049 before citing it as biological corroboration.
-- Confirm histologic grade availability and encoding in each external cohort (BCNB, ACROBAT, ACCCC report grade; TCGA-BRCA does not), so grade can be used as a covariate the way slide-size and ER/PR were used internally.
+- Confirm histologic grade availability and encoding in ACROBAT and ACCCC; BCNB grade is already confirmed, and TCGA-BRCA does not provide grade.
 
 ## Sources
 

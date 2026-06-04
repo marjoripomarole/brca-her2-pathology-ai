@@ -14,6 +14,7 @@ The current primary result is a hypothesis-generating tissue-context association
 - The signal survives several internal checks and shuffled-label sanity tests.
 - It is not yet safe as independent HER2 biology because slide-size, TCGA source-site, and tissue-composition confounding remain strong.
 - As of 2026-06-04, two independent generic foundation-model embeddings (H-Optimus-0 and Virchow2) reproduce the low-versus-zero separation and the same source-site collapse, so the GigaTIME virtual-immune framing is not required to explain it. The most parsimonious reading is generic morphology tracking TCGA acquisition structure. TCGA-internal evidence is now considered exhausted.
+- Also as of 2026-06-04, BCNB is confirmed as the immediate external validation cohort: full clinical data preserve HER2 IHC 0/1+/2+/3+, yielding 127 HER2-zero and 654 HER2-low cases from one scanner, with grade/ER/PR/Ki67 available for covariate control. The next practical gate is WSI or patch acquisition.
 
 ## Read First
 
@@ -23,7 +24,7 @@ The current primary result is a hypothesis-generating tissue-context association
 4. `plain_language_methodology.md` - accessible methodology explanation.
 5. `her2_isoform_state_hypothesis.md` - careful biological framing and language guardrails.
 6. `clinical_her2_high_trust_tile128_hoptimus_embedding_control.md` and `clinical_her2_high_trust_tile128_virchow2_embedding_control.md` - generic-embedding confound controls (the decisive 2026-06-04 result).
-7. `external_validation_candidates.md` - external cohort shortlist and the path off TCGA.
+7. `external_validation_candidates.md` and `bcnb_exploration.md` - external cohort path off TCGA; BCNB is now the confirmed priority cohort.
 
 ## Navigation Folders
 
@@ -38,7 +39,7 @@ Existing report files currently remain at the top level of `docs/` because many 
 
 TCGA-internal evidence is exhausted (see the 2026-06-04 entry in `paper_proposal_process_log.md`). The generic-embedding controls are done and confirm the confound. The remaining productive moves are:
 
-1. External / single-scanner validation with real HER2 IHC/ISH, ideally with IHC-0-vs-1+ granularity. See `external_validation_candidates.md`.
+1. External / single-scanner validation in BCNB: build the WSI/patch manifest, run a one-slide smoke, then test HER2-low versus HER2-zero with grade/ER/PR controls. See `external_validation_candidates.md` and `bcnb_exploration.md`.
 2. Write a cautionary-methods paper; the two-model embedding control is the centerpiece figure and Valieris et al. 2024 is the key comparison.
 3. Validate GigaTIME virtual immune channels against real multiplex IHC (e.g. IMPRESS) to close the RNA-validation gap.
 4. Get a pathologist or tumor-region review loop around the case-driver tiles.

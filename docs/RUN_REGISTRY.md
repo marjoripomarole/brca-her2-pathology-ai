@@ -24,4 +24,6 @@ Status: curated run-by-run map. This file is meant to answer "what is current, w
 
 The current research priority is not another classifier score. It is reducing ambiguity around whether the HER2-low versus HER2-zero signal reflects tumor biology, tissue composition, or TCGA acquisition/source-site structure.
 
-The 2026-06-04 generic-embedding control sharpened this: a generic H-Optimus-0 embedding with no immune interpretation reproduces the low-versus-zero separation and the same source-site collapse as GigaTIME. The remaining priority is therefore external/site-balanced validation and pathologist tumor-region review, not more GigaTIME-internal sensitivity analyses.
+The 2026-06-04 generic-embedding controls sharpened this: H-Optimus-0 and Virchow2 embeddings with no immune interpretation reproduce the low-versus-zero separation and the same source-site collapse as GigaTIME. The remaining priority is therefore external/site-balanced validation and pathologist tumor-region review, not more GigaTIME-internal sensitivity analyses.
+
+BCNB is now the immediate external-validation path. Its full clinical file confirms preserved HER2 IHC 0/1+/2+/3+ scoring, yielding 127 HER2-zero and 654 HER2-low cases from one scanner, with grade/ER/PR/Ki67/molecular subtype available for covariate control. The next run registry entry should be a BCNB image-input smoke test after the WSI or patch manifest is built.

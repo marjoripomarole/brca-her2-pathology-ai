@@ -1,6 +1,6 @@
-# BCNB Exploration: Access Map And Clinical-Data Reconnaissance
+# BCNB Exploration: Confirmed Clinical External Cohort
 
-Status: working reconnaissance of the BCNB (Early Breast Cancer Core-Needle Biopsy) dataset as an external validation candidate. Compiled 2026-06-04. The goal was to settle, before committing effort, whether BCNB can support the HER2-low versus HER2-zero question that TCGA cannot.
+Status: BCNB clinical access has been resolved. The full clinical file confirms that BCNB can support the HER2-low versus HER2-zero question that TCGA cannot; the remaining task is WSI or patch acquisition and manifest construction.
 
 ## Why BCNB
 
@@ -28,38 +28,67 @@ There are two tiers of BCNB clinical data, and they differ critically:
 
 2. Gated (full dataset, via the registration form at https://bupt-ai-cz.github.io/BCNB/): the WSIs plus the full clinical `.xlsx`, which the dataset page lists as including `HER2`, a separate `HER2 expression` field, `histological grading`, `Ki67`, `molecular subtype`, tumor type, surgical info, and lymph-node fields.
 
-## The Make-Or-Break Question, And Its Honest Status
+## The Make-Or-Break Question, And Its Resolution
 
-For the HER2-low versus HER2-zero question we need IHC score 0 to be separable from 1+ (and ideally grade). Status:
+For the HER2-low versus HER2-zero question we need IHC score 0 to be separable from 1+ (and ideally grade). Before full access, the evidence looked like this:
 
 - Public data: binary HER2 only. Cannot recover HER2-zero.
 - BCNB paper (PMC8551965): Table 1 records HER2 only as Positive/Negative, and does not report histological grade. So the paper does not confirm score-level granularity.
 - Dataset page: lists `HER2` and a separate `HER2 expression` field, plus `histological grading`. The naming strongly suggests `HER2 expression` is the IHC score level (0 / 1+ / 2+ / 3+), which would make HER2-zero recoverable, and that grade is available. But the actual values are not documented publicly.
 
-Conclusion: whether BCNB supports the low-versus-zero split is plausible but UNCONFIRMED, and can only be settled by registering and inspecting the `HER2 expression` and `histological grading` columns of the full clinical `.xlsx`. This is the single gating fact.
+Historical conclusion before full access: BCNB support for low-versus-zero was plausible but had to be settled by inspecting the `HER2 expression` and `histological grading` columns of the full clinical `.xlsx`. That gating fact is now resolved below.
 
-## Why It Is Worth Registering Anyway
+## RESOLVED 2026-06-04: Full Clinical Data Obtained — BCNB Is Viable For Low-vs-Zero
 
-- If `HER2 expression` encodes IHC 0/1+/2+/3+: BCNB becomes a single-scanner external HER2-low-versus-zero cohort. With 781 HER2-negative patients, a typical 0-versus-low split would yield on the order of a few hundred HER2-zero and a few hundred HER2-low cases, far beyond the 61 HER2-zero ceiling of all TCGA-BRCA. This is the ideal test of whether any low-versus-zero signal survives once acquisition is controlled.
-- If `HER2 expression` is only binary after all: BCNB still provides a clean single-scanner external test of HER2-positive versus HER2-negative reproducibility (277 vs 781), and a check on whether acquisition-style confounds (which should be absent in a single-scanner cohort) reappear.
-- Grade: if `histological grading` is present, it lets us test the literature-motivated confounder (grade differs low vs zero; see `external_validation_candidates.md`) that TCGA could not provide.
+Registration was approved and the full clinical file obtained (`patient-clinical-data.xlsx`, 76 KB, downloaded to `data/bcnb/`, gitignored and not redistributed per the non-commercial license). The gating question is answered: the `HER2 Expression` column IS the IHC score, and HER2-zero is recoverable.
+
+Full clinical columns (1,058 patients): Patient ID, Age, Tumour Size, Tumour Type, ER, PR, HER2 (status), HER2 Expression (IHC score), Histological grading, Surgical, Ki67, Molecular subtype, Number of lymph node metastases, ALN status.
+
+HER2 Expression (IHC score) distribution: 0 → 127, 1+ → 242, 2+ → 483, 3+ → 206. The binary `HER2` status already encodes ISH for 2+ cases (412 of the 2+ are HER2-negative/ISH−, 71 are HER2-positive/ISH+).
+
+Derived clinical HER2 groups (written to `data/bcnb/bcnb_her2_labels.csv`):
+
+| Group | Definition | N |
+|---|---|---:|
+| HER2-zero | IHC 0 | 127 |
+| HER2-low | IHC 1+, or 2+/ISH-negative | 654 |
+| HER2-positive | IHC 3+, or 2+/ISH-positive | 277 |
+
+This is a single-scanner external HER2-low-versus-zero cohort of 654 vs 127. The HER2-zero group alone (127) is more than double all of TCGA-BRCA (61), and the whole low/zero set (781) is ~6.6x the TCGA high-trust low/zero set (118).
+
+Grade is present and shows the literature-expected pattern: among graded low/zero cases, HER2-zero is proportionally more often grade 3 (42/90 = 47%) than HER2-low (181/577 = 31%), consistent with HER2-zero being more aggressive (see `external_validation_candidates.md` literature context). Because grade is available, the grade confounder that TCGA could not provide can now be tested and adjusted, exactly as slide-size/ER/PR were handled internally. ER also differs between groups (HER2-low 86% ER+, HER2-zero 65% ER+), and is likewise available as a covariate.
+
+Remaining piece: the WSIs. The Drive folder contains `WSIs/` (the slides), `paper_patches.zip` (1.85 GB precomputed patches), `dataset-splitting/`, `README.txt`, and `patient-clinical-data.xlsx`. The slides (or the precomputed patches) are the large download needed before running the embedding-control pipeline.
+
+## Why BCNB Is Now The Priority External Cohort
+
+- The clinical label gate is solved: HER2-zero, HER2-low, and HER2-positive can be derived from preserved IHC score plus binary HER2/ISH status.
+- The acquisition confound that dominates TCGA is reduced by design: one institution and one scanner.
+- Grade, ER, PR, Ki67, molecular subtype, and nodal status are available, so grade and receptor-status confounding can be modeled rather than hand-waved.
+- The low/zero cohort is large enough for real robustness checks: 781 low/zero cases total, versus 118 high-trust low/zero TCGA slides.
+- The tissue type is core-needle biopsy, which is not identical to TCGA diagnostic resections, but that difference is scientifically manageable and should be documented as an external-validation domain shift.
 
 ## Recommended Next Steps
 
-1. Register at https://bupt-ai-cz.github.io/BCNB/ (name, email, institution, country) and download the full clinical `.xlsx`. This is a manual, human step.
-2. Once the full clinical file is local, inspect the `HER2 expression` and `histological grading` column values to confirm (a) IHC-0-vs-1+ separability and (b) grade availability/encoding.
-3. If HER2-zero is recoverable, build a single-scanner BCNB HER2-low/HER2-zero cohort and run the existing pipeline. The embedding runners (`scripts/run_hoptimus_tcga_brca.py`, `scripts/run_virchow2_tcga_brca.py`) and the control (`scripts/analyze_hoptimus_embedding_control.py`) all take an arbitrary slide table, so BCNB can be processed with the same machinery; only a small BCNB slide-list/label builder is needed.
-4. Apply the same confound discipline: because BCNB is single-scanner, slide-size/source-site baselines should NOT classify low-vs-zero well; if they do, that is itself an important negative finding.
+1. Decide the image input path:
+   - Full WSIs: strongest and cleanest for a paper-grade analysis, because the same tile-sampling, tissue-fraction, and slide-size controls can be reused.
+   - `paper_patches.zip`: faster first triage, but only acceptable if patch filenames/metadata map cleanly to patient IDs and patch sampling is documented enough to avoid hidden selection bias.
+2. Build a BCNB slide/patch manifest joined to `data/bcnb/bcnb_her2_labels.csv`, keeping restricted data under ignored `data/bcnb/`.
+3. Run a one-slide or one-patient smoke first, then a small balanced low/zero pilot, before launching a full 781-patient embedding run.
+4. Reuse the existing confound discipline: compare image embeddings against grade, ER/PR, Ki67, molecular subtype, nodal status, and tissue/slide-size features. In BCNB, slide-size/source-site should not classify low-vs-zero well; if it does, that is itself a warning sign.
+5. Treat H-Optimus-0/Virchow2 as primary foundation-model controls; keep GigaTIME/DeepSpot/HistoPrism as interpretive follow-ups unless the BCNB signal survives clinical and acquisition controls.
 
 ## Local Workspace And Environment Notes
 
 - Public clinical files: `data/bcnb/clinical_public/preprocessed-type-{0..4}.xlsx` (gitignored under `data/`).
+- Full clinical file: `data/bcnb/patient-clinical-data.xlsx` (gitignored; non-commercial dataset file, not redistributed).
+- Derived label table: `data/bcnb/bcnb_her2_labels.csv` (gitignored; local derivative used for analysis).
 - `openpyxl` was installed into the `gigatime-tcga` conda env on 2026-06-04 to read `.xlsx` (the full BCNB clinical file is also `.xlsx`).
 
 ## Caveats
 
 - Core-needle biopsy tissue differs from TCGA diagnostic resections (less tissue per slide, different sampling); tile-count and tissue-fraction settings may need adjustment.
-- HER2-low is a post-2019 clinical category; a 2010-2020 cohort scored for it requires that the `HER2 expression` field preserves the original IHC score, not a re-derived binary.
+- HER2-low is a post-2019 clinical category; BCNB preserves the original IHC score, but the study should still phrase the low/zero grouping as a derived contemporary clinical grouping from historical IHC/ISH data.
 - BCNB is non-commercial use only.
 
 ## Sources

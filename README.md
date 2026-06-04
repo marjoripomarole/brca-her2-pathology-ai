@@ -12,9 +12,10 @@ The current honest interpretation is:
 
 - The strongest image signal is HER2-low versus HER2-zero, not HER2-positive detection.
 - GigaTIME-derived virtual immune, myeloid, checkpoint, and CK-associated signals reproducibly differ between HER2-low and HER2-zero groups.
-- The signal is hypothesis-generating and heavily caveated by tissue composition, slide size, and TCGA source-site imbalance.
+- The signal is hypothesis-generating and heavily caveated by tissue composition, slide size, and TCGA source-site imbalance; H-Optimus-0 and Virchow2 reproduce the same low-versus-zero separation and source-site collapse, so TCGA-internal evidence is now exhausted.
 - Local STAR-count RNA supports broad HER2-positive status through ERBB2 expression, but does not strongly separate HER2-low from HER2-zero.
 - Current local RNA files do not support direct HER2 isoform or junction-level validation.
+- BCNB is now the confirmed external validation priority: full clinical data preserve HER2 IHC 0/1+/2+/3+, with 127 HER2-zero and 654 HER2-low single-scanner cases plus grade/ER/PR/Ki67 covariates. The next practical step is WSI or patch acquisition.
 
 ## Start Here
 
@@ -24,7 +25,8 @@ Read these in order:
 2. [docs/clinical_her2_high_trust_tile128_results.md](docs/clinical_her2_high_trust_tile128_results.md) for the current primary result.
 3. [docs/advisor_brief.md](docs/advisor_brief.md) for the advisor-facing narrative.
 4. [docs/RUN_REGISTRY.md](docs/RUN_REGISTRY.md) for the run-by-run evidence trail.
-5. [scripts/README.md](scripts/README.md) for script groups and rerun entry points.
+5. [docs/external_validation_candidates.md](docs/external_validation_candidates.md) and [docs/bcnb_exploration.md](docs/bcnb_exploration.md) for the confirmed BCNB external-validation path.
+6. [scripts/README.md](scripts/README.md) for script groups and rerun entry points.
 
 ## Current Primary Result
 
@@ -42,7 +44,7 @@ Primary run:
 - Cohort: female TCGA-BRCA diagnostic H&E slides with HER2 label, file-integrity, and OpenSlide QC.
 - Tile sampling: 128 random tissue tiles per slide.
 - Main association: HER2-low has lower virtual immune/myeloid/checkpoint and CK-associated signal than HER2-zero.
-- Main caveat: slide-size/source-site and tissue-composition confounding remain strong.
+- Main caveat: slide-size/source-site and tissue-composition confounding remain strong; generic H&E embeddings reproduce the separation, so the signal should be treated as morphology/acquisition entanglement until external validation.
 
 Use [docs/clinical_her2_high_trust_tile128_results.md](docs/clinical_her2_high_trust_tile128_results.md) as the current presentation summary. Older 30-slide and 60-slide reports are historical.
 
@@ -141,7 +143,8 @@ See [scripts/README.md](scripts/README.md) for more commands.
 The project is broader than one model:
 
 - **GigaTIME** is the current primary model because it generates virtual mIF/TIME channels from H&E.
-- **H0-mini / H-Optimus-0** are the next generic H&E embedding baselines to test whether broader morphology signal exists outside GigaTIME virtual mIF channels.
+- **H-Optimus-0 and Virchow2** are the completed generic H&E embedding controls; both reproduce the TCGA low-versus-zero separation and source-site collapse.
+- **H0-mini** remains a possible smaller gated Bioptimus follow-up if access is granted.
 - **Phikon** is an open fallback for tile embeddings when gated model access blocks progress.
 - **HistoPrism** and **DeepSpot** are interpretive follow-ups for tile/spot-level virtual gene-expression style outputs; they should not be treated as primary biological validation yet.
 
