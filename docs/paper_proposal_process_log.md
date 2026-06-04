@@ -1930,3 +1930,99 @@ Updated key files:
 - `results/gigatime_tcga_brca_clinical_her2_high_trust_tile128/within_source_site_low_zero/`
 - `notebooks/clinical_her2_findings_simple.ipynb`
 - `notebooks/clinical_her2_findings_simple.html`
+
+## 2026-06-04: Generic-Embedding Confound Controls (H-Optimus-0 + Virchow2), Repo Cleanup, And External-Validation Scouting
+
+This session had one scientific goal: stop adding GigaTIME-internal sensitivity analyses to the HER2-low versus HER2-zero result and instead run the single most decisive control, then decide where the project goes next. It is recorded here in full so future work understands what was explored and why.
+
+### Framing: what the prior evidence already implied
+
+Coming into the session, the accumulated sensitivity analyses (clinical/source-site covariates, matched subsets, leave-source-site-out, within-source-site, tissue composition) all pointed the same way: the HER2-low versus HER2-zero signal is real inside TCGA but heavily confounded by slide-size and TCGA source-site acquisition structure. Key prior numbers: HER2-zero slides are ~2.8x larger files than HER2-low (279 vs 100 MB, p ~ 1.5e-15); slide-size-only and source-site-only covariates classify low/zero better than GigaTIME; GigaTIME drops under source-site holdout; adjusting for low-marker tile fraction collapses the channel effects.
+
+The open question those analyses did not resolve: is the GigaTIME "virtual immune/myeloid/checkpoint" interpretation actually required to explain the signal, or would any generic morphology representation do the same? That is what a generic-embedding control answers directly, and it had been listed as "planned" but never run.
+
+### Repo housekeeping
+
+We removed an unrelated GATK germline variant-calling scaffold left over from the repo's initial template: `data/reference/` (hg38 FASTA + BWA/GATK index, ~8.3 GB), `data/known_sites/` (dbSNP138/Mills/known-indels VCFs, ~10 GB), and `data/raw/NA12878.bam` (Genome-in-a-Bottle germline sample). These were never git-tracked and unreferenced by the pathology workflow; removal reclaimed ~19 GB locally (51 GB -> 33 GB on disk). The README data-hygiene note was updated to record this. Commit `0885de7`. (A separate in-flight DeepSpot one-tile smoke update was also committed, `42ba8a3`.)
+
+### Generic-embedding control 1: H-Optimus-0
+
+Method: extracted `bioptimus/H-optimus-0` embeddings (1536-d, mean-pooled over 128 random tissue tiles per slide) for the same 171 strict high-trust slides used in the GigaTIME primary run, via `scripts/run_hoptimus_tcga_brca.py` (the existing runner already targeted the high-trust list). Then `scripts/analyze_hoptimus_embedding_control.py` classified HER2-low versus HER2-zero (118 slides: 57 low, 61 zero) on identical cross-validation folds as the GigaTIME analyses, comparing slide-size, source-site, GigaTIME-channel, and embedding feature sets, with PCA fit inside each training fold to avoid leakage.
+
+The control asks three questions: (1) does a generic embedding with no immune interpretation separate low/zero? (2) does it collapse under leave-source-site-out the way GigaTIME does? (3) does the portable slide-size baseline still beat it?
+
+Result, all three "yes":
+
+| Feature set | Repeated-CV balanced accuracy | Leave-source-site-out balanced accuracy |
+|---|---:|---:|
+| Slide-size covariates | 0.888 | 0.882 |
+| Source-site covariates | 0.873 | 0.500 |
+| GigaTIME mean channels | 0.710 | 0.617 |
+| H-Optimus-0 embedding | 0.726 | 0.586 |
+
+H-Optimus-0 separates low/zero at 0.726 (beats shuffled-label null, mean 0.488, empirical p = 0.005; stable across PCA 10/20/30 components = 0.724/0.726/0.705), slightly exceeding GigaTIME's 0.710. It collapses under source-site holdout (0.726 -> 0.586) exactly as GigaTIME does (0.710 -> 0.617), while slide-size stays portable at 0.882. The source-site 0.500 under holdout is the expected degenerate case (one-hot site identity cannot predict an unseen held-out site).
+
+Conclusion: the GigaTIME-specific virtual-immune framing is not required. A generic morphology embedding reproduces the separation and the same source-site collapse. Committed `8d21b02`, wired into RUN_REGISTRY, the high-trust results doc, the advisor brief, and the model-experiments/script maps.
+
+### Generic-embedding control 2: Virchow2 (independent replication)
+
+To make the control hard to dismiss, we ran a second, architecturally distinct foundation model. Built `scripts/run_virchow2_tcga_brca.py` (cohort runner reusing the register-token-aware embedding recipe from `scripts/run_virchow2_one_slide_smoke.py`: Virchow2 returns 261 tokens = 1 class + 4 register + 256 patch; the embedding concatenates the class token with the mean of the patch tokens after the register tokens, giving 2560-d). Generalized `scripts/analyze_hoptimus_embedding_control.py` to accept any model via `--model-label`/`--model-id` with a dynamic embedding dimension; verified by regression that the H-Optimus path reproduces byte-identically.
+
+Virchow2 (`paige-ai/Virchow2`, 2560-d, same 171 slides, 128 tiles) replicated H-Optimus-0:
+
+| Feature set (low vs zero, n=118) | Repeated-CV BA | Leave-source-site-out BA |
+|---|---:|---:|
+| Slide-size covariates | 0.888 | 0.882 |
+| GigaTIME mean channels | 0.710 | 0.617 |
+| H-Optimus-0 embedding | 0.726 | 0.586 |
+| Virchow2 embedding | 0.693 | 0.551 |
+
+Virchow2: 0.693 repeated-CV (beats null, p = 0.005; PCA 10/20/30 = 0.693/0.693/0.659), collapsing to 0.551 under source-site holdout, beaten by portable slide-size 0.882. Committed `b58d795`, wired into the same spine docs (results-doc section now shows the consolidated two-model table).
+
+Bottom line of the two controls: three independent image representations (GigaTIME virtual channels, H-Optimus-0, Virchow2) all show the same three-part signature: separate low/zero at ~0.69-0.73, collapse under source-site holdout, and lose to a 3-number portable slide-size baseline. This is strong, replicated evidence that the low-versus-zero axis is generic morphology/tissue-composition tracking TCGA acquisition structure, not GigaTIME-specific virtual immune biology. It is an internal TCGA control, not external validation.
+
+### Engineering notes for future runs
+
+- Both embedding runners write `slide_embeddings.csv` incrementally per slide and support `--resume` (keyed on slide_id). Two accidental mid-run stops this session were recovered with zero loss by re-launching the identical command with `--resume`.
+- Do not pass `--save-tile-csv` for full-cohort embedding runs: the runner rewrites the entire growing tile CSV after every slide (quadratic I/O). The slide-mean `slide_embeddings.csv` is all the control needs.
+- Measured throughput on Apple MPS: H-Optimus-0 (ViT-g, 1.1B) ~0.21 s/tile, full 171-slide x ~123-tile run ~82 min; Virchow2 (ViT-H, 632M) faster. H-Optimus-0 and Virchow2 weights are gated on Hugging Face but loaded from local cache without a shell token (a stored `~/.cache/huggingface/token` plus accepted licenses).
+- The control script is now model-agnostic: a third model drops in via `--embeddings/--model-label/--model-id`.
+
+### Decision: would pulling more TCGA slides help? No.
+
+We explicitly evaluated whether expanding the TCGA cohort would strengthen the analysis. It would not, for the question that matters:
+
+- HER2-zero is the binding limit. The TCGA-BRCA clinical label table has exactly 61 HER2-zero cases total (verified live: positive 174, low 407, zero 61, unknown 455, of 1,097 rows), and the high-trust cohort already uses all 61. The 455 "unknown" cases cannot be cleanly recovered into HER2-zero (most are receptor-negative without an IHC score, so 0 vs 1+ is indeterminate). The low/zero comparison is therefore already N-maxed.
+- The bottleneck is confounding, not power. More TCGA-BRCA slides carry the same acquisition structure, so they tighten confidence intervals around a biased estimate (can make a confounded signal look more significant). The within-site rescue does not scale either: only 4 TCGA sites contain both classes (51 cases, 12 low / 39 zero), and more slides cannot manufacture site-balanced low/zero that TCGA does not have.
+
+What would actually help is variation independent of HER2 status: an external, single-scanner/single-institution cohort with H&E + real HER2 IHC/ISH (ideally with IHC-0-vs-1+ granularity), real IHC/mIF to ground the virtual channels, or pathologist tumor-region annotation.
+
+### External-validation scouting
+
+We scouted external cohorts (web/literature search). Full shortlist, attributes, access notes, the HER2-low-vs-zero granularity caveat, and prior-work context are recorded in `docs/external_validation_candidates.md`. Headline points:
+
+- The exact comparison (HER2-low IHC 1+/2+ISH- vs HER2-zero IHC 0) is the hard part externally: most public H&E+HER2 sets are binary +/-, and even with the IHC slide, pathologist interobserver agreement on 0 vs 1+ is low.
+- Closest prior work: Valieris et al., Breast Cancer Research 2024 (PMC11331614), weakly-supervised HER2-low from H&E across ACCCC (private single-institution, Brazil), HEROHE, and TCGA. They saw external performance drop and noted TCGA technical diversity affects classification, but did not do the leave-site-out / embedding-control confound analysis this project did. Our method is more rigorous than the published SOTA on this exact task; they are a natural citation and possible collaborator (ACCCC is the cleanest fit cohort).
+- Best candidates: ACCCC (single-institution, has neg/low/high, private -> request), BCNB (1,058 WSI, single scanner, free with registration, HER2 0-vs-1+ separability to confirm), ACROBAT (4,212 WSI, single Swedish source, paired H&E + HER2-IHC, public), HEROHE (single scanner, binary HER2 only), Yale HER2-TUMOR-ROIS on TCIA (H&E + trastuzumab response), IMPRESS (HER2+/TNBC + neoadjuvant response + real multiplex IHC, which could validate GigaTIME's virtual immune channels against measured markers).
+
+### Commits this session
+
+- `42ba8a3` Record real H-Optimus one-tile DeepSpot smoke result (in-flight work).
+- `0885de7` Note removal of unrelated GATK genomics scaffold (~19 GB reclaimed).
+- `8d21b02` Add generic H-Optimus-0 embedding control for HER2-low vs zero.
+- `b58d795` Add Virchow2 as a second generic-embedding control.
+
+### Current honest status and next steps
+
+The TCGA-internal evidence is now exhausted: the low-versus-zero signal has been shown to be acquisition-confounded via covariate baselines, matched subsets, source-site holdout, within-site restriction, and two orthogonal foundation-model embedding controls. The two scientifically meaningful paths forward are: (1) external/site-controlled validation with real HER2 IHC/ISH (see `docs/external_validation_candidates.md`), and (2) writing a cautionary-methods paper, for which the two-model embedding control is a strong centerpiece figure and Valieris et al. 2024 is the key comparison. Pulling more TCGA slides is not a productive next step.
+
+Updated key files:
+
+- `scripts/run_hoptimus_tcga_brca.py` (used for full H-Optimus-0 extraction)
+- `scripts/run_virchow2_one_slide_smoke.py`, `scripts/run_virchow2_tcga_brca.py`
+- `scripts/analyze_hoptimus_embedding_control.py` (generalized to any embedding model)
+- `docs/clinical_her2_high_trust_tile128_hoptimus_embedding_control.md`
+- `docs/clinical_her2_high_trust_tile128_virchow2_embedding_control.md`
+- `docs/external_validation_candidates.md`
+- `docs/clinical_her2_high_trust_tile128_results.md`, `docs/advisor_brief.md`, `docs/RUN_REGISTRY.md` (spine updates)
+- `results/hoptimus_tcga_brca_high_trust_tile128/`, `results/virchow2_tcga_brca_high_trust_tile128/`
