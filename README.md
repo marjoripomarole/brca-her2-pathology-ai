@@ -15,7 +15,7 @@ The current honest interpretation is:
 - The signal is hypothesis-generating and heavily caveated by tissue composition, slide size, and TCGA source-site imbalance; H-Optimus-0 and Virchow2 reproduce the same low-versus-zero separation and source-site collapse, so TCGA-internal evidence is now exhausted.
 - Local STAR-count RNA supports broad HER2-positive status through ERBB2 expression, but does not strongly separate HER2-low from HER2-zero.
 - Current local RNA files do not support direct HER2 isoform or junction-level validation.
-- BCNB is now the confirmed external validation priority: full clinical data preserve HER2 IHC 0/1+/2+/3+, with 127 HER2-zero and 654 HER2-low single-scanner cases plus grade/ER/PR/Ki67 covariates. The next practical step is WSI or patch acquisition.
+- BCNB is now the confirmed external validation priority: full clinical data preserve HER2 IHC 0/1+/2+/3+, with 127 HER2-zero and 654 HER2-low single-scanner cases plus grade/ER/PR/Ki67 covariates. The first H-Optimus-0 hash-capped patch pilot shows a statistically non-null but modest signal (BA 0.597, AUC 0.640), comparable to clinical covariates rather than a strong standalone classifier.
 
 ## Start Here
 
@@ -100,7 +100,30 @@ Audit BCNB image inputs before any model run:
 conda run -n gigatime-tcga python scripts/audit_bcnb_image_inputs.py
 conda run -n gigatime-tcga python scripts/build_bcnb_patch_manifest.py \
   --max-patches-per-patient 10 \
-  --output data/bcnb/bcnb_patch_manifest_capped10.csv
+  --sampling-method hash \
+  --sampling-seed 20260604 \
+  --output data/bcnb/bcnb_patch_manifest_hash_capped10.csv
+```
+
+Run a patient-level BCNB patch embedding control:
+
+```bash
+conda run -n gigatime-tcga python scripts/run_bcnb_patch_embeddings.py \
+  --model hoptimus0 \
+  --patch-manifest data/bcnb/bcnb_patch_manifest_hash_capped10.csv \
+  --groups HER2-zero,HER2-low \
+  --max-patches-per-patient 10 \
+  --out-dir results/bcnb_patch_embeddings_hoptimus0_hash_capped10_low_zero \
+  --batch-size 16 \
+  --resume
+
+conda run -n gigatime-tcga python scripts/analyze_bcnb_patch_embedding_control.py \
+  --embeddings results/bcnb_patch_embeddings_hoptimus0_hash_capped10_low_zero/patient_embeddings.csv \
+  --model-label H-Optimus-0 \
+  --model-id bioptimus/H-optimus-0 \
+  --out-dir results/bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero \
+  --asset-dir docs/assets/bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero \
+  --out-markdown docs/bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero.md
 ```
 
 Select/download a clinical HER2 cohort:
@@ -154,6 +177,7 @@ The project is broader than one model:
 
 - **GigaTIME** is the current primary model because it generates virtual mIF/TIME channels from H&E.
 - **H-Optimus-0 and Virchow2** are the completed generic H&E embedding controls; both reproduce the TCGA low-versus-zero separation and source-site collapse.
+- **BCNB H-Optimus-0 patch embeddings** are the first external pilot: they show a modest non-null low-versus-zero signal, but do not outperform clinical covariates by balanced accuracy.
 - **H0-mini** remains a possible smaller gated Bioptimus follow-up if access is granted.
 - **Phikon** is an open fallback for tile embeddings when gated model access blocks progress.
 - **HistoPrism** and **DeepSpot** are interpretive follow-ups for tile/spot-level virtual gene-expression style outputs; they should not be treated as primary biological validation yet.

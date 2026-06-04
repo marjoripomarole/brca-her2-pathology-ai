@@ -5,9 +5,10 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import re
 import zipfile
-from collections import Counter
+from collections import Counter, defaultdict
 from pathlib import Path
 
 
@@ -32,6 +33,8 @@ OUTPUT_COLUMNS = [
     "filename_num_1",
     "filename_num_2",
     "filename_num_3",
+    "sampling_method",
+    "sampling_rank",
 ]
 
 
@@ -45,6 +48,17 @@ def parse_args() -> argparse.Namespace:
         type=int,
         default=0,
         help="Optional deterministic cap per patient. Use 0 to include every patch.",
+    )
+    parser.add_argument(
+        "--sampling-method",
+        choices=["lexicographic", "hash"],
+        default="lexicographic",
+        help="Patch ordering before capping. Use hash for deterministic pseudo-random patient-level caps.",
+    )
+    parser.add_argument(
+        "--sampling-seed",
+        default="20260604",
+        help="Seed string used by --sampling-method hash.",
     )
     return parser.parse_args()
 
@@ -66,12 +80,57 @@ def numeric_filename_tokens(filename: str) -> tuple[str, str, str]:
     return padded[1], padded[2], padded[3]
 
 
-def iter_manifest_rows(labels: dict[str, dict[str, str]], patch_zip: Path, max_patches_per_patient: int):
+def sampling_sort_key(info: zipfile.ZipInfo, sampling_method: str, sampling_seed: str) -> tuple[str, str]:
+    if sampling_method == "hash":
+        digest = hashlib.sha256(f"{sampling_seed}:{info.filename}".encode("utf-8")).hexdigest()
+        return digest, info.filename
+    return info.filename, ""
+
+
+def patch_row(
+    labels: dict[str, dict[str, str]],
+    patient_id: str,
+    info: zipfile.ZipInfo,
+    sampling_method: str,
+    sampling_rank: int,
+) -> dict[str, str]:
+    label = labels[patient_id]
+    filename = Path(info.filename).name
+    filename_num_1, filename_num_2, filename_num_3 = numeric_filename_tokens(filename)
+    return {
+        "patient_id": patient_id,
+        "clinical_her2_group": label.get("clinical_her2_group", ""),
+        "her2_status": label.get("her2_status", ""),
+        "her2_ihc": label.get("her2_ihc", ""),
+        "grade": label.get("grade", ""),
+        "ER": label.get("ER", ""),
+        "PR": label.get("PR", ""),
+        "ki67": label.get("ki67", ""),
+        "molecular_subtype": label.get("molecular_subtype", ""),
+        "aln_status": label.get("aln_status", ""),
+        "patch_zip_member": info.filename,
+        "patch_filename": filename,
+        "patch_file_size": str(info.file_size),
+        "filename_num_1": filename_num_1,
+        "filename_num_2": filename_num_2,
+        "filename_num_3": filename_num_3,
+        "sampling_method": sampling_method,
+        "sampling_rank": str(sampling_rank),
+    }
+
+
+def iter_manifest_rows(
+    labels: dict[str, dict[str, str]],
+    patch_zip: Path,
+    max_patches_per_patient: int,
+    sampling_method: str,
+    sampling_seed: str,
+):
     if not patch_zip.exists():
         raise FileNotFoundError(f"BCNB patch zip not found: {patch_zip}")
-    per_patient_counts: Counter[str] = Counter()
+    by_patient: dict[str, list[zipfile.ZipInfo]] = defaultdict(list)
     with zipfile.ZipFile(patch_zip) as archive:
-        for info in sorted(archive.infolist(), key=lambda item: item.filename):
+        for info in archive.infolist():
             if info.is_dir() or not info.filename.lower().endswith(".jpg"):
                 continue
             parts = info.filename.split("/")
@@ -80,31 +139,14 @@ def iter_manifest_rows(labels: dict[str, dict[str, str]], patch_zip: Path, max_p
             patient_id = str(int(parts[1]))
             if patient_id not in labels:
                 raise ValueError(f"Patch member {info.filename} references unknown patient_id={patient_id}")
-            if max_patches_per_patient and per_patient_counts[patient_id] >= max_patches_per_patient:
-                continue
-            per_patient_counts[patient_id] += 1
+            by_patient[patient_id].append(info)
 
-            label = labels[patient_id]
-            filename = Path(info.filename).name
-            filename_num_1, filename_num_2, filename_num_3 = numeric_filename_tokens(filename)
-            yield {
-                "patient_id": patient_id,
-                "clinical_her2_group": label.get("clinical_her2_group", ""),
-                "her2_status": label.get("her2_status", ""),
-                "her2_ihc": label.get("her2_ihc", ""),
-                "grade": label.get("grade", ""),
-                "ER": label.get("ER", ""),
-                "PR": label.get("PR", ""),
-                "ki67": label.get("ki67", ""),
-                "molecular_subtype": label.get("molecular_subtype", ""),
-                "aln_status": label.get("aln_status", ""),
-                "patch_zip_member": info.filename,
-                "patch_filename": filename,
-                "patch_file_size": str(info.file_size),
-                "filename_num_1": filename_num_1,
-                "filename_num_2": filename_num_2,
-                "filename_num_3": filename_num_3,
-            }
+    for patient_id in sorted(by_patient, key=int):
+        ordered = sorted(by_patient[patient_id], key=lambda info: sampling_sort_key(info, sampling_method, sampling_seed))
+        if max_patches_per_patient:
+            ordered = ordered[:max_patches_per_patient]
+        for sampling_rank, info in enumerate(ordered, start=1):
+            yield patch_row(labels, patient_id, info, sampling_method, sampling_rank)
 
 
 def write_manifest(rows: list[dict[str, str]], output: Path) -> None:
@@ -115,13 +157,19 @@ def write_manifest(rows: list[dict[str, str]], output: Path) -> None:
         writer.writerows(rows)
 
 
-def summarize(rows: list[dict[str, str]], labels: dict[str, dict[str, str]], max_patches_per_patient: int) -> str:
+def summarize(
+    rows: list[dict[str, str]],
+    labels: dict[str, dict[str, str]],
+    max_patches_per_patient: int,
+    sampling_method: str,
+) -> str:
     patient_counts = Counter(row["patient_id"] for row in rows)
     group_patch_counts = Counter(row["clinical_her2_group"] for row in rows)
     group_patient_counts = Counter(labels[patient_id]["clinical_her2_group"] for patient_id in patient_counts)
     lines = [
         f"Wrote {len(rows)} patch rows for {len(patient_counts)} patients.",
         f"Patch cap per patient: {max_patches_per_patient or 'none'}",
+        f"Patch sampling method: {sampling_method}",
         "Patients by group: "
         + ", ".join(
             f"{group}={group_patient_counts[group]}" for group in ["HER2-zero", "HER2-low", "HER2-positive"]
@@ -139,9 +187,17 @@ def summarize(rows: list[dict[str, str]], labels: dict[str, dict[str, str]], max
 def main() -> None:
     args = parse_args()
     labels = load_labels(args.labels)
-    rows = list(iter_manifest_rows(labels, args.patch_zip, args.max_patches_per_patient))
+    rows = list(
+        iter_manifest_rows(
+            labels,
+            args.patch_zip,
+            args.max_patches_per_patient,
+            args.sampling_method,
+            args.sampling_seed,
+        )
+    )
     write_manifest(rows, args.output)
-    print(summarize(rows, labels, args.max_patches_per_patient))
+    print(summarize(rows, labels, args.max_patches_per_patient, args.sampling_method))
 
 
 if __name__ == "__main__":

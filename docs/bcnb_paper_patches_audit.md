@@ -38,7 +38,8 @@ Two local manifests were generated from the zip central directory:
 | Manifest | Rows | Purpose |
 |---|---:|---|
 | `data/bcnb/bcnb_patch_manifest.csv` | 76,578 | Full patch inventory |
-| `data/bcnb/bcnb_patch_manifest_capped10.csv` | 10,580 | Deterministic smoke/pilot input with 10 patches per patient |
+| `data/bcnb/bcnb_patch_manifest_capped10.csv` | 10,580 | Historical lexicographic deterministic smoke input with 10 patches per patient |
+| `data/bcnb/bcnb_patch_manifest_hash_capped10.csv` | 10,580 | Preferred pilot input: deterministic hash-sampled 10 patches per patient |
 
 ## HER2 Group Coverage
 
@@ -56,12 +57,12 @@ One patch per HER2 group was extracted to `data/bcnb/patch_samples/` for local i
 
 ## Interpretation
 
-`paper_patches.zip` is usable for a fast BCNB smoke/pilot because it has complete patient coverage and clean patient-ID mapping. It is not a full substitute for WSIs in the strongest paper-grade analysis, because the patches are precomputed from annotated tumor regions and do not preserve whole-slide acquisition features such as slide size, tissue area, or full tissue-composition context. The appropriate first experiment is therefore:
+`paper_patches.zip` is usable for a fast BCNB smoke/pilot because it has complete patient coverage and clean patient-ID mapping. It is not a full substitute for WSIs in the strongest paper-grade analysis, because the patches are precomputed from annotated tumor regions and do not preserve whole-slide acquisition features such as slide size, tissue area, or full tissue-composition context. The first H-Optimus-0 hash-capped patient-level patch pilot is complete (`bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero.md`) and found a modest non-null signal. The appropriate patch workflow is therefore:
 
 1. Build a patch manifest from the zip central directory.
-2. Run a one-patient or tiny balanced low/zero embedding smoke from extracted patches.
-3. For a pilot, use `bcnb_patch_manifest_capped10.csv` or another capped manifest and aggregate embeddings to patient level before classification.
-4. Treat full WSI download as still preferable if the patch pilot finds a signal worth testing with slide-level controls.
+2. Run any new model as a one-patient or tiny balanced low/zero embedding smoke from extracted patches first.
+3. For full patch pilots, use `bcnb_patch_manifest_hash_capped10.csv` or another capped manifest and aggregate embeddings to patient level before classification.
+4. Replicate the H-Optimus-0 result with Virchow2 before treating full WSI download as justified.
 
 ## Commands Run
 
@@ -72,4 +73,9 @@ conda run -n gigatime-tcga python scripts/build_bcnb_patch_manifest.py
 conda run -n gigatime-tcga python scripts/build_bcnb_patch_manifest.py \
   --max-patches-per-patient 10 \
   --output data/bcnb/bcnb_patch_manifest_capped10.csv
+conda run -n gigatime-tcga python scripts/build_bcnb_patch_manifest.py \
+  --max-patches-per-patient 10 \
+  --sampling-method hash \
+  --sampling-seed 20260604 \
+  --output data/bcnb/bcnb_patch_manifest_hash_capped10.csv
 ```

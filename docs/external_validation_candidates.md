@@ -8,7 +8,7 @@ The HER2-low versus HER2-zero signal in this project has been shown, repeatedly 
 
 TCGA-internal evidence is therefore exhausted. Pulling more TCGA-BRCA slides does not help: HER2-zero is capped at 61 cases in all of TCGA-BRCA (already fully used), and more data along a confounded axis tightens confidence intervals around a biased estimate. The only data that can change the conclusion is variation independent of HER2 status, i.e. an external cohort, ideally single-scanner / single-institution so the slide-size/source-site confound is removed by construction.
 
-BCNB now satisfies the first external-cohort gate: full clinical data are local, HER2 IHC 0/1+/2+/3+ is recoverable, histological grade is available, and the cohort is single-scanner. The patch-input gate is also partly solved: `paper_patches.zip` is local, valid, and maps cleanly to all 1,058 patients (see `bcnb_paper_patches_audit.md`). The remaining caveat is methodological rather than logistical: precomputed tumor-region patches do not preserve whole-slide acquisition and tissue-area controls, so full WSIs remain preferable for the strongest paper-grade analysis.
+BCNB now satisfies the first external-cohort gate: full clinical data are local, HER2 IHC 0/1+/2+/3+ is recoverable, histological grade is available, and the cohort is single-scanner. The patch-input gate is also solved for a first pilot: `paper_patches.zip` is local, valid, and maps cleanly to all 1,058 patients (see `bcnb_paper_patches_audit.md`). The first H-Optimus-0 hash-capped patient-level patch pilot found a statistically non-null but modest low-versus-zero signal (BA 0.597, AUC 0.640), comparable to clinical covariates rather than a strong standalone classifier. The remaining caveat is methodological rather than logistical: precomputed tumor-region patches do not preserve whole-slide acquisition and tissue-area controls, so full WSIs remain preferable for the strongest paper-grade analysis.
 
 ## The Hard Constraint: HER2-Low-vs-Zero Granularity
 
@@ -55,14 +55,14 @@ However, TCGA-BRCA does not provide histologic grade: there is no grade field in
 
 ## Recommended Path
 
-1. Make BCNB the immediate external validation path. The clinical gate is solved, and the precomputed patch archive is usable for a fast smoke/pilot: BCNB gives a single-scanner low-versus-zero cohort of 654 vs 127 with grade, ER, PR, Ki67, molecular subtype, and nodal status. Next, build a patient-level patch manifest and rerun the generic-embedding control with capped patches per patient and grade/ER/PR covariate baselines.
+1. Keep BCNB as the immediate external validation path. The clinical gate is solved, and the first H-Optimus-0 patch pilot is complete: BCNB gives a single-scanner low-versus-zero cohort of 654 vs 127 with grade, ER, PR, Ki67, molecular subtype, and nodal status. Next, replicate the same deterministic hash-capped patient-level patch analysis with Virchow2, then decide whether the modest signal warrants full WSI download.
 2. Contact the Valieris / ACCCC group in parallel. Their cohort remains the cleanest published analogue (single-institution, single-scanner, with neg/low/high labels) and they have hit the same wall. A collaboration or data request is still valuable, especially if BCNB's core-biopsy design introduces tissue-sampling concerns.
 3. Use ACROBAT as the strongest independent stress test if BCNB succeeds or is limited by WSI logistics: 4,000+ WSIs from one source, with paired HER2-IHC slides to derive status.
 4. Use IMPRESS multiplex IHC (real PD-L1/CD8/CD163) to validate GigaTIME's virtual immune channels against measured immune markers, closing the RNA-validation gap that never closed.
 
 ## Open Items To Verify Before Running
 
-- BCNB: build a patch manifest from `paper_patches.zip` and run a one-patient smoke; use capped patches per patient and patient-level aggregation to avoid patch-count imbalance.
+- BCNB: replicate the completed H-Optimus-0 deterministic hash-capped patch pilot with Virchow2.
 - BCNB: decide whether to download full WSIs after the patch pilot; full WSIs remain strongest for slide-size/tissue-area controls.
 - ACROBAT: confirm whether per-case HER2 IHC scores are tabulated in metadata, or only the stained IHC slides are provided (requiring score derivation).
 - ACCCC: confirm data-sharing terms / whether the Valieris group will collaborate or release.

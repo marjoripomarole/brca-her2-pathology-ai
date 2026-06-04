@@ -8,7 +8,7 @@ This folder contains standalone workflow scripts. Most scripts are intentionally
 - `build_tcga_brca_clinical_her2_labels.py` - build clinical HER2-positive/low/zero labels from TCGA clinical fields.
 - `build_bcnb_her2_labels.py` - build BCNB HER2-positive/low/zero labels from the gated clinical workbook.
 - `audit_bcnb_image_inputs.py` - inspect BCNB WSI/patch files and patient-ID mapping before model runs.
-- `build_bcnb_patch_manifest.py` - build patient-linked manifests for BCNB precomputed patches.
+- `build_bcnb_patch_manifest.py` - build patient-linked manifests for BCNB precomputed patches, including deterministic capped patch sampling.
 - `select_clinical_her2_cohort.py` - select balanced HER2 cohorts.
 - `download_clinical_her2_cohort_slides.py` - download selected diagnostic slides.
 - `download_selected_star_counts.py` - download selected STAR-count RNA files.
@@ -19,6 +19,7 @@ This folder contains standalone workflow scripts. Most scripts are intentionally
 - `run_gigatime_tcga_brca.py` - primary GigaTIME virtual mIF feature extraction.
 - `run_hoptimus_tcga_brca.py` - H0-mini/H-Optimus H&E embedding extraction.
 - `run_virchow2_tcga_brca.py` - Virchow2 H&E embedding extraction (second embedding control).
+- `run_bcnb_patch_embeddings.py` - extract patient-level BCNB patch embeddings from capped patch manifests using H-Optimus/H0-mini/Virchow2.
 
 ## Current Analysis And Sensitivity Checks
 
@@ -37,6 +38,7 @@ This folder contains standalone workflow scripts. Most scripts are intentionally
 - `analyze_local_erbb2_expression_validation.py`
 - `audit_her2_isoform_validation_feasibility.py`
 - `analyze_hoptimus_embedding_control.py`
+- `analyze_bcnb_patch_embedding_control.py` - patient-level BCNB HER2-low versus HER2-zero patch-embedding analysis with clinical covariate controls and shuffled-label null.
 
 ## Historical Analysis
 
