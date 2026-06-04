@@ -73,16 +73,18 @@ Remaining piece: the WSIs. The Drive folder contains `WSIs/` (the slides), `pape
 1. Decide the image input path:
    - Full WSIs: strongest and cleanest for a paper-grade analysis, because the same tile-sampling, tissue-fraction, and slide-size controls can be reused.
    - `paper_patches.zip`: faster first triage, but only acceptable if patch filenames/metadata map cleanly to patient IDs and patch sampling is documented enough to avoid hidden selection bias.
-2. Build a BCNB slide/patch manifest joined to `data/bcnb/bcnb_her2_labels.csv`, keeping restricted data under ignored `data/bcnb/`.
-3. Run a one-slide or one-patient smoke first, then a small balanced low/zero pilot, before launching a full 781-patient embedding run.
-4. Reuse the existing confound discipline: compare image embeddings against grade, ER/PR, Ki67, molecular subtype, nodal status, and tissue/slide-size features. In BCNB, slide-size/source-site should not classify low-vs-zero well; if it does, that is itself a warning sign.
-5. Treat H-Optimus-0/Virchow2 as primary foundation-model controls; keep GigaTIME/DeepSpot/HistoPrism as interpretive follow-ups unless the BCNB signal survives clinical and acquisition controls.
+2. Run `scripts/audit_bcnb_image_inputs.py` after any WSI or patch download to confirm which files are present and whether patient IDs map cleanly to `data/bcnb/bcnb_her2_labels.csv`.
+3. Build a BCNB slide/patch manifest joined to `data/bcnb/bcnb_her2_labels.csv`, keeping restricted data under ignored `data/bcnb/`.
+4. Run a one-slide or one-patient smoke first, then a small balanced low/zero pilot, before launching a full 781-patient embedding run.
+5. Reuse the existing confound discipline: compare image embeddings against grade, ER/PR, Ki67, molecular subtype, nodal status, and tissue/slide-size features. In BCNB, slide-size/source-site should not classify low-vs-zero well; if it does, that is itself a warning sign.
+6. Treat H-Optimus-0/Virchow2 as primary foundation-model controls; keep GigaTIME/DeepSpot/HistoPrism as interpretive follow-ups unless the BCNB signal survives clinical and acquisition controls.
 
 ## Local Workspace And Environment Notes
 
 - Public clinical files: `data/bcnb/clinical_public/preprocessed-type-{0..4}.xlsx` (gitignored under `data/`).
 - Full clinical file: `data/bcnb/patient-clinical-data.xlsx` (gitignored; non-commercial dataset file, not redistributed).
 - Derived label table: `data/bcnb/bcnb_her2_labels.csv` (gitignored; local derivative used for analysis), reproducibly built by `scripts/build_bcnb_her2_labels.py`.
+- Image-input audit: `scripts/audit_bcnb_image_inputs.py` checks for `data/bcnb/WSIs/`, `data/bcnb/paper_patches.zip`, and `data/bcnb/paper_patches/` without extracting or running models.
 - `openpyxl` was installed into the `gigatime-tcga` conda env on 2026-06-04 to read `.xlsx` (the full BCNB clinical file is also `.xlsx`).
 
 ## Caveats

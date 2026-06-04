@@ -62,7 +62,7 @@ However, TCGA-BRCA does not provide histologic grade: there is no grade field in
 
 ## Open Items To Verify Before Running
 
-- BCNB: obtain the WSIs or inspect `paper_patches.zip` metadata, then confirm patient/slide/patch IDs map cleanly to `Patient ID` and do not encode a train/test split or patch-selection process that would bias a foundation-model embedding analysis.
+- BCNB: obtain the WSIs or inspect `paper_patches.zip` metadata, then run `scripts/audit_bcnb_image_inputs.py` to confirm patient/slide/patch IDs map cleanly to `Patient ID` and do not encode a train/test split or patch-selection process that would bias a foundation-model embedding analysis.
 - BCNB: decide whether to use full WSIs (strongest, more storage/time) or precomputed patches (faster, but only acceptable if patch sampling is documented and patient-linked).
 - ACROBAT: confirm whether per-case HER2 IHC scores are tabulated in metadata, or only the stained IHC slides are provided (requiring score derivation).
 - ACCCC: confirm data-sharing terms / whether the Valieris group will collaborate or release.

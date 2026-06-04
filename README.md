@@ -94,6 +94,12 @@ conda run -n gigatime-tcga python scripts/build_tcga_brca_clinical_her2_labels.p
 conda run -n gigatime-tcga python scripts/build_bcnb_her2_labels.py
 ```
 
+Audit BCNB image inputs before any model run:
+
+```bash
+conda run -n gigatime-tcga python scripts/audit_bcnb_image_inputs.py
+```
+
 Select/download a clinical HER2 cohort:
 
 ```bash
