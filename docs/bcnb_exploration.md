@@ -62,7 +62,7 @@ Image-input update: `paper_patches.zip` has now been downloaded and audited loca
 
 ## FIRST PATCH PILOTS 2026-06-04: H-Optimus-0 And Virchow2 Find A Modest Non-Null Signal
 
-The first BCNB external patch pilots are complete (`bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero.md` and `bcnb_patch_embedding_control_virchow2_hash_capped10_low_zero.md`). They used deterministic hash-sampled capped patches (`10` patches per patient), patient-level mean foundation-model embeddings, class-balanced logistic regression, repeated stratified 5-fold CV with 5 repeats, and 200 shuffled-label permutations.
+The first BCNB external patch pilots are complete (`bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero.md`, `bcnb_patch_embedding_control_virchow2_hash_capped10_low_zero.md`, and `bcnb_patch_model_comparison_hoptimus0_virchow2_hash_capped10_low_zero.md`). They used deterministic hash-sampled capped patches (`10` patches per patient), patient-level mean foundation-model embeddings, class-balanced logistic regression, repeated stratified 5-fold CV with 5 repeats, and 200 shuffled-label permutations.
 
 Key low-versus-zero results:
 
@@ -70,12 +70,17 @@ Key low-versus-zero results:
 |---|---:|---:|
 | H-Optimus-0 patch embedding | 0.597 | 0.640 |
 | Virchow2 patch embedding | 0.600 | 0.643 |
+| H-Optimus-0 + Virchow2 | 0.609 | 0.651 |
+| H-Optimus-0 + Virchow2 + clinical covariates | 0.615 | 0.661 |
+| Average probability ensemble | 0.610 | 0.650 |
 | H-Optimus-0 + clinical covariates | 0.595 | 0.641 |
 | Virchow2 + clinical covariates | 0.603 | 0.646 |
 | Clinical covariates | 0.643 | 0.627 |
 | Grade only | 0.595 | 0.604 |
 
-Both embedding results beat the shuffled-label null for balanced accuracy and AUC (empirical p=0.005 with 200 permutations), but the effect size is modest and neither model beats clinical covariates by balanced accuracy. This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related. The next decision is whether the paper needs patch-sampling sensitivity or full WSI processing for stronger slide/tissue-area controls.
+Both single-model embedding results beat the shuffled-label null for balanced accuracy and AUC (empirical p=0.005 with 200 permutations), and the paired dual-model embedding also beats its shuffled-label null (BA 0.609 / AUC 0.651, empirical p=0.005). But the effect size is modest, the dual-model gain is small, and neither image-only model beats clinical covariates by balanced accuracy. H-Optimus-0 and Virchow2 patient-mean probabilities are highly concordant (Pearson r=0.804), arguing against a hidden strong classifier missed by one encoder.
+
+This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related. The next decision is whether the paper needs patch-sampling sensitivity or full WSI processing for stronger slide/tissue-area controls.
 
 ## Why BCNB Is Now The Priority External Cohort
 

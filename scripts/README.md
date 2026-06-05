@@ -39,6 +39,7 @@ This folder contains standalone workflow scripts. Most scripts are intentionally
 - `audit_her2_isoform_validation_feasibility.py`
 - `analyze_hoptimus_embedding_control.py`
 - `analyze_bcnb_patch_embedding_control.py` - patient-level BCNB HER2-low versus HER2-zero patch-embedding analysis with clinical covariate controls and shuffled-label null.
+- `analyze_bcnb_patch_model_comparison.py` - paired BCNB H-Optimus-0 versus Virchow2 comparison, dual-model ensemble check, and cross-model score agreement.
 
 ## Historical Analysis
 
