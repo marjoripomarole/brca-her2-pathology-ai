@@ -60,20 +60,22 @@ Grade is present and shows the literature-expected pattern: among graded low/zer
 
 Image-input update: `paper_patches.zip` has now been downloaded and audited locally (see `bcnb_paper_patches_audit.md`). It maps cleanly to all 1,058 patients and can support a fast patch-based smoke/pilot. Full WSIs are still the stronger paper-grade input if a patch pilot finds a signal worth testing with slide-level controls.
 
-## FIRST PATCH PILOT 2026-06-04: H-Optimus-0 Finds A Modest Non-Null Signal
+## FIRST PATCH PILOTS 2026-06-04: H-Optimus-0 And Virchow2 Find A Modest Non-Null Signal
 
-The first BCNB external patch pilot is complete (`bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero.md`). It used deterministic hash-sampled capped patches (`10` patches per patient), patient-level mean H-Optimus-0 embeddings, class-balanced logistic regression, repeated stratified 5-fold CV with 5 repeats, and 200 shuffled-label permutations.
+The first BCNB external patch pilots are complete (`bcnb_patch_embedding_control_hoptimus0_hash_capped10_low_zero.md` and `bcnb_patch_embedding_control_virchow2_hash_capped10_low_zero.md`). They used deterministic hash-sampled capped patches (`10` patches per patient), patient-level mean foundation-model embeddings, class-balanced logistic regression, repeated stratified 5-fold CV with 5 repeats, and 200 shuffled-label permutations.
 
 Key low-versus-zero results:
 
 | Feature set | Balanced accuracy | AUC |
 |---|---:|---:|
 | H-Optimus-0 patch embedding | 0.597 | 0.640 |
+| Virchow2 patch embedding | 0.600 | 0.643 |
 | H-Optimus-0 + clinical covariates | 0.595 | 0.641 |
+| Virchow2 + clinical covariates | 0.603 | 0.646 |
 | Clinical covariates | 0.643 | 0.627 |
 | Grade only | 0.595 | 0.604 |
 
-The embedding result beats the shuffled-label null for both balanced accuracy and AUC (empirical p=0.005 with 200 permutations), but the effect size is modest and does not beat clinical covariates by balanced accuracy. This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related, and this should be replicated with Virchow2 before deciding whether to pay the cost of full WSI processing.
+Both embedding results beat the shuffled-label null for balanced accuracy and AUC (empirical p=0.005 with 200 permutations), but the effect size is modest and neither model beats clinical covariates by balanced accuracy. This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related. The next decision is whether the paper needs patch-sampling sensitivity or full WSI processing for stronger slide/tissue-area controls.
 
 ## Why BCNB Is Now The Priority External Cohort
 
@@ -89,7 +91,7 @@ The embedding result beats the shuffled-label null for both balanced accuracy an
    - Patch pilot: ready for the next smoke; use `paper_patches.zip` with deterministic hash-capped patches per patient and patient-level aggregation.
    - Full WSIs: strongest and cleanest for a paper-grade analysis, because the same tile-sampling, tissue-fraction, and slide-size controls can be reused.
 2. Build or refresh the BCNB patch manifest with `scripts/build_bcnb_patch_manifest.py`, keeping restricted data under ignored `data/bcnb/`.
-3. Replicate the completed H-Optimus-0 patch pilot with Virchow2 before launching any heavier WSI workflow.
+3. Run patch-sampling/PCA sensitivity, or launch heavier WSI processing only if the paper needs stronger slide/tissue-area controls than the precomputed patch pilot can provide.
 4. Run `scripts/audit_bcnb_image_inputs.py` again after any WSI download to confirm which files are present and whether patient IDs map cleanly.
 5. Reuse the existing confound discipline: compare image embeddings against grade, ER/PR, Ki67, molecular subtype, nodal status, and tissue/slide-size features. In BCNB, slide-size/source-site should not classify low-vs-zero well; if it does, that is itself a warning sign.
 6. Treat H-Optimus-0/Virchow2 as primary foundation-model controls; keep GigaTIME/DeepSpot/HistoPrism as interpretive follow-ups unless the BCNB signal survives clinical and acquisition controls.
