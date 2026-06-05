@@ -82,6 +82,8 @@ Both single-model embedding results beat the shuffled-label null for balanced ac
 
 The first H-Optimus-0 patch-selection sensitivity check is also complete (`bcnb_patch_sampling_sensitivity_hoptimus0.md`): the older lexicographic capped10 sample gives BA 0.575 / AUC 0.633 at PCA20, versus BA 0.597 / AUC 0.640 for the preferred hash-capped sample. This shifts the effect size slightly but preserves the same conclusion.
 
+The clinical-stratified performance check is now complete (`bcnb_patch_stratified_performance_hoptimus0_virchow2_hash_capped10_low_zero.md`). It scores patient-mean out-of-fold predictions inside grade, ER/PR, subtype, nodal, Ki67, and grade-by-ER slices. The pooled dual-model patient-mean result is still modest (BA 0.613 / AUC 0.660), and performance is uneven in clinically meaningful strata: ER-negative dual AUC 0.598, Luminal A dual AUC 0.557, Grade 2 dual AUC 0.617, Grade 3 dual AUC 0.668.
+
 This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related. The next decision is whether the paper needs multi-seed patch-sampling sensitivity or full WSI processing for stronger slide/tissue-area controls.
 
 ## Why BCNB Is Now The Priority External Cohort
