@@ -80,7 +80,9 @@ Key low-versus-zero results:
 
 Both single-model embedding results beat the shuffled-label null for balanced accuracy and AUC (empirical p=0.005 with 200 permutations), and the paired dual-model embedding also beats its shuffled-label null (BA 0.609 / AUC 0.651, empirical p=0.005). But the effect size is modest, the dual-model gain is small, and neither image-only model beats clinical covariates by balanced accuracy. H-Optimus-0 and Virchow2 patient-mean probabilities are highly concordant (Pearson r=0.804), arguing against a hidden strong classifier missed by one encoder.
 
-This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related. The next decision is whether the paper needs patch-sampling sensitivity or full WSI processing for stronger slide/tissue-area controls.
+The first H-Optimus-0 patch-selection sensitivity check is also complete (`bcnb_patch_sampling_sensitivity_hoptimus0.md`): the older lexicographic capped10 sample gives BA 0.575 / AUC 0.633 at PCA20, versus BA 0.597 / AUC 0.640 for the preferred hash-capped sample. This shifts the effect size slightly but preserves the same conclusion.
+
+This is the first real evidence that a low/zero-associated morphology signal exists outside TCGA, but it is not a strong standalone HER2-low-versus-zero classifier from the patch pilot. The result currently supports a careful interpretation: BCNB contains weak image-readable morphology/covariate signal, plausibly grade/receptor/tissue-context related. The next decision is whether the paper needs multi-seed patch-sampling sensitivity or full WSI processing for stronger slide/tissue-area controls.
 
 ## Why BCNB Is Now The Priority External Cohort
 
@@ -96,7 +98,7 @@ This is the first real evidence that a low/zero-associated morphology signal exi
    - Patch pilot: ready for the next smoke; use `paper_patches.zip` with deterministic hash-capped patches per patient and patient-level aggregation.
    - Full WSIs: strongest and cleanest for a paper-grade analysis, because the same tile-sampling, tissue-fraction, and slide-size controls can be reused.
 2. Build or refresh the BCNB patch manifest with `scripts/build_bcnb_patch_manifest.py`, keeping restricted data under ignored `data/bcnb/`.
-3. Run patch-sampling/PCA sensitivity, or launch heavier WSI processing only if the paper needs stronger slide/tissue-area controls than the precomputed patch pilot can provide.
+3. Run multi-seed patch-sampling/PCA sensitivity, or launch heavier WSI processing only if the paper needs stronger slide/tissue-area controls than the precomputed patch pilot can provide.
 4. Run `scripts/audit_bcnb_image_inputs.py` again after any WSI download to confirm which files are present and whether patient IDs map cleanly.
 5. Reuse the existing confound discipline: compare image embeddings against grade, ER/PR, Ki67, molecular subtype, nodal status, and tissue/slide-size features. In BCNB, slide-size/source-site should not classify low-vs-zero well; if it does, that is itself a warning sign.
 6. Treat H-Optimus-0/Virchow2 as primary foundation-model controls; keep GigaTIME/DeepSpot/HistoPrism as interpretive follow-ups unless the BCNB signal survives clinical and acquisition controls.
