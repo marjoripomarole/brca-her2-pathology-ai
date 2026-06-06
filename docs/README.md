@@ -32,6 +32,7 @@ Core current reports:
 - `clinical_her2_high_trust_tile128_local_erbb2_validation.md`
 - `her2_isoform_validation_feasibility.md`
 - `her2_isoform_state_hypothesis.md`
+- `hest_rna_validation_summary.md` - cross-sample (9 sections, 2 platforms: HEST-1k Xenium + Visium) RNA-specificity generalization of the GigaTIME virtual channels; per-sample reports are `hest_rna_validation_<id>.md`.
 
 ## Methods
 

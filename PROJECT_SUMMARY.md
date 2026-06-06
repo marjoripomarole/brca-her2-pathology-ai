@@ -44,6 +44,13 @@ explicitly stress-testing every confound.
    collapse to ~0 and **CD68 ("macrophage") goes negative**. GigaTIME channels reflect a
    broad epithelial-vs-immune/cellularity contrast, not faithful per-marker stains.
 
+6. **Cross-sample generalization (2026-06-06).** The audit was replicated across 9 within-slide
+   sections on two platforms — 4 HEST-1k Xenium IDC patients + 3 HEST-1k Visium (IDC+ILC) + the two
+   Janesick sections. Only the **T-cell channels (CD3/CD8/CD4)** are consistently marker-specific
+   (CD3/CD8 positive in 8/9), **CK** is specific in 6/9 tumors, and **CD68/CD14/CD16/PD-L1/Ki67 are
+   never specific** (CD68 0/9). Specificity is tissue-variable — one Xenium patient and the ILC case
+   show essentially none — confirming and sharpening point 5. See `docs/hest_rna_validation_summary.md`.
+
 ## Strongest findings (ranked)
 
 1. **The flagship HER2 imaging signal is a confound, not biology** — demonstrated cleanly by
