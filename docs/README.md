@@ -12,6 +12,10 @@ Start with `00_start_here.md`. This file is the compact index for the rest of th
 - `plain_language_methodology.md` - accessible methodology explanation.
 - `paper_proposal_process_log.md` - process history and rationale.
 
+## Strategic / Future Directions
+
+- `her2_new_directions_exploration.md` - 2026-06-06 brainstorm: pivot off the confounded H&E HER2-status direction toward the lab's HER2 isoform/ADC-resistance edge (Guardia et al. 2025), and a proposed cheap HER2 "targetability" marker (ECD-IV vs ICD epitope index). Hypothesis-generating; direction still open.
+
 ## Current Results
 
 Use `03_current_results/README.md` for the current-result reading order.
