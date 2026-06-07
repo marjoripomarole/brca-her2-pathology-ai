@@ -6,6 +6,7 @@ Start with `00_start_here.md`. This file is the compact index for the rest of th
 
 ## Start Here
 
+- `manuscript_draft.md` - **working draft of the cautionary-methods manuscript** (synthesizes the confound result + RNA-specificity audit + two-model field-level comparison; for author revision).
 - `00_start_here.md` - current project map and next scientific steps.
 - `RUN_REGISTRY.md` - run-by-run evidence trail.
 - `advisor_brief.md` - concise advisor-facing summary.
